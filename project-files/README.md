@@ -14,7 +14,7 @@ Copy both folders into your repository.
 University of Cyprus · Department of Computer Science  
 EPL426 — Computer Graphics
 
-##Team
+## Team
 
 - Charalambia Kousrarou
 - Eleni Ioannou
