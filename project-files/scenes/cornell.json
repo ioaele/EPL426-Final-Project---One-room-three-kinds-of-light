@@ -1,0 +1,415 @@
+{
+ "image": {
+  "width": 320,
+  "height": 320
+ },
+ "camera": {
+  "projection": "perspective",
+  "vrp": [
+   0,
+   2.75,
+   6.6
+  ],
+  "vpn": [
+   0,
+   0,
+   -1
+  ],
+  "vuv": [
+   0,
+   1,
+   0
+  ],
+  "d": 1.0,
+  "window": [
+   -0.37,
+   -0.37,
+   0.37,
+   0.37
+  ],
+  "near": 0.1,
+  "aperture": 0.0,
+  "focus": 9.0,
+  "shutter": [
+   0.0,
+   0.0
+  ]
+ },
+ "background": [
+  0,
+  0,
+  0
+ ],
+ "ambient": [
+  0.12,
+  0.12,
+  0.12
+ ],
+ "max_depth": 5,
+ "min_weight": 0.01,
+ "lights": [
+  {
+   "type": "area",
+   "corner": [
+    -0.65,
+    5.49,
+    -3.3
+   ],
+   "edge1": [
+    1.3,
+    0,
+    0
+   ],
+   "edge2": [
+    0,
+    0,
+    1.1
+   ],
+   "intensity": [
+    17.0,
+    13.6,
+    9.0
+   ]
+  }
+ ],
+ "root": "room",
+ "nodes": {
+  "room": {
+   "children": [
+    "floor",
+    "ceiling",
+    "back",
+    "left",
+    "right",
+    "light",
+    "tall_box",
+    "short_box",
+    "teapot",
+    "glass",
+    "mirror_ball"
+   ]
+  },
+  "floor": {
+   "geometry": {
+    "type": "quad",
+    "corner": [
+     -2.75,
+     0.0,
+     0.0
+    ],
+    "edge1": [
+     5.5,
+     0.0,
+     0.0
+    ],
+    "edge2": [
+     0.0,
+     0.0,
+     -5.5
+    ]
+   },
+   "material": {
+    "kd": [
+     0.73,
+     0.73,
+     0.73
+    ]
+   }
+  },
+  "ceiling": {
+   "geometry": {
+    "type": "quad",
+    "corner": [
+     -2.75,
+     5.5,
+     0.0
+    ],
+    "edge1": [
+     0.0,
+     0.0,
+     -5.5
+    ],
+    "edge2": [
+     5.5,
+     0.0,
+     0.0
+    ]
+   },
+   "material": {
+    "kd": [
+     0.73,
+     0.73,
+     0.73
+    ]
+   }
+  },
+  "back": {
+   "geometry": {
+    "type": "quad",
+    "corner": [
+     -2.75,
+     0.0,
+     -5.5
+    ],
+    "edge1": [
+     5.5,
+     0.0,
+     0.0
+    ],
+    "edge2": [
+     0.0,
+     5.5,
+     0.0
+    ]
+   },
+   "material": {
+    "kd": [
+     0.73,
+     0.73,
+     0.73
+    ]
+   }
+  },
+  "left": {
+   "geometry": {
+    "type": "quad",
+    "corner": [
+     -2.75,
+     0.0,
+     0.0
+    ],
+    "edge1": [
+     0.0,
+     0.0,
+     -5.5
+    ],
+    "edge2": [
+     0.0,
+     5.5,
+     0.0
+    ]
+   },
+   "material": {
+    "kd": [
+     0.63,
+     0.065,
+     0.05
+    ]
+   }
+  },
+  "right": {
+   "geometry": {
+    "type": "quad",
+    "corner": [
+     2.75,
+     0.0,
+     0.0
+    ],
+    "edge1": [
+     0.0,
+     5.5,
+     0.0
+    ],
+    "edge2": [
+     0.0,
+     0.0,
+     -5.5
+    ]
+   },
+   "material": {
+    "kd": [
+     0.14,
+     0.45,
+     0.091
+    ]
+   }
+  },
+  "light": {
+   "geometry": {
+    "type": "quad",
+    "corner": [
+     -0.65,
+     5.49,
+     -3.3
+    ],
+    "edge1": [
+     1.3,
+     0.0,
+     0.0
+    ],
+    "edge2": [
+     0.0,
+     0.0,
+     1.1
+    ]
+   },
+   "material": {
+    "kd": [
+     0.78,
+     0.78,
+     0.78
+    ],
+    "emission": [
+     17.0,
+     13.6,
+     9.0
+    ]
+   }
+  },
+  "tall_box": {
+   "transform": [
+    [
+     "translate",
+     -0.95,
+     0,
+     -3.7
+    ],
+    [
+     "rotate_y",
+     18
+    ]
+   ],
+   "geometry": {
+    "type": "box",
+    "min": [
+     -0.8,
+     0,
+     -0.8
+    ],
+    "max": [
+     0.8,
+     3.3,
+     0.8
+    ]
+   },
+   "material": {
+    "kd": [
+     0.73,
+     0.73,
+     0.73
+    ]
+   }
+  },
+  "short_box": {
+   "transform": [
+    [
+     "translate",
+     1.05,
+     0,
+     -2.5
+    ],
+    [
+     "rotate_y",
+     -17
+    ]
+   ],
+   "geometry": {
+    "type": "box",
+    "min": [
+     -0.8,
+     0,
+     -0.8
+    ],
+    "max": [
+     0.8,
+     1.6,
+     0.8
+    ]
+   },
+   "material": {
+    "kd": [
+     0.73,
+     0.73,
+     0.73
+    ]
+   }
+  },
+  "teapot": {
+   "transform": [
+    [
+     "translate",
+     1.0,
+     1.6,
+     -2.5
+    ],
+    [
+     "rotate_y",
+     -35
+    ],
+    [
+     "scale",
+     0.24,
+     0.24,
+     0.24
+    ]
+   ],
+   "geometry": {
+    "type": "mesh",
+    "file": "teapot.obj"
+   },
+   "smooth": true,
+   "material": {
+    "kd": [
+     0.45,
+     0.25,
+     0.08
+    ],
+    "ks": 0.5,
+    "m": 60,
+    "kr": 0.45,
+    "gloss": 120
+   }
+  },
+  "glass": {
+   "geometry": {
+    "type": "sphere",
+    "centre": [
+     -1.35,
+     0.8,
+     -1.25
+    ],
+    "radius": 0.8,
+    "detail": 4
+   },
+   "material": {
+    "kd": [
+     0,
+     0,
+     0
+    ],
+    "ks": 0.6,
+    "m": 200,
+    "kr": 0.08,
+    "kt": 0.9,
+    "ior": 1.5
+   }
+  },
+  "mirror_ball": {
+   "geometry": {
+    "type": "sphere",
+    "centre": [
+     0.45,
+     0.45,
+     -0.75
+    ],
+    "radius": 0.45,
+    "detail": 3
+   },
+   "velocity": [
+    0.7,
+    0.0,
+    0.0
+   ],
+   "material": {
+    "kd": [
+     0.05,
+     0.05,
+     0.05
+    ],
+    "ks": 0.8,
+    "m": 300,
+    "kr": 0.9
+   }
+  }
+ }
+}
