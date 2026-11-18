@@ -127,8 +127,8 @@ def brute_force_any_hit(o,d,v0,v1,v2,t_min,t_max):
     return False
 
 @njit(cache=True)
-def intersect_ray_box(o,d,xmin,xmax,ymin,ymax,zmin,zmax,t_min,t_max):
-#or def intersect_ray_box(o,d,bmin,bmax,t_min,t_max): we'll see later
+#REFERENCE: https://www.scratchapixel.com/lessons/3d-basic-rendering/introduction-acceleration-structure//bounding-volume-hierarchy-BVH-part1.html
+def intersect_ray_box(o,d,bmin,bmax,t_min,t_max):
 #tests if the ray goes through the box [xmin,xmax] x [ymin,ymax] x [zmin,zmax]
 #the box is the space shared by 3 slabs which is the space between 2 parallel planes):
 #x-slab:xmin<=x<=xmax,y-slab:ymin<=y<=ymax,z-slab:zmin<=z<= zmax
@@ -141,87 +141,40 @@ def intersect_ray_box(o,d,xmin,xmax,ymin,ymax,zmin,zmax,t_min,t_max):
         t_enter=t_min
         t_exit=t_max
         
-        #X SLAB
-        #d[0] = 0: the ray is parallel to the x-slab, its x never changes
-        if d[0] == 0.0:
-            if o[0] < xmin or o[0] > xmax: #ray parallel to the box
-                #outside the slab forever so it can never reach the box
-                return False, np.inf
-
-
-        else: 
-            #the ray crosses the 2 planes x = xmin and x = xmax: solve o[0] + t*d[0] = xmin (and = xmax)
-            t1=(xmin- o[0])/d[0]
-            t2=(xmax-o[0])/d[0]
-        
-            #if the ray moves towards -x it meets xmax first: swap so that t1 is the entry t2 the exit
-            if t1 > t2: 
-                temp=t2
-                t2=t1
-                t1=temp
-            
-            #latest entry so far
-            if t1>t_enter:
-                t_enter=t1
-
-            #earliest exit so far
-            if t2<t_exit:
-                t_exit=t2
-                
-        
-            #the entry is after the exit: no moment inside all slabs so far so it misses
-            if t_enter > t_exit: 
-                return False,np.inf
-            
-            
-        #Y SLAB
-        if d[1] == 0.0:
-            if o[1] < ymin or o[1] > ymax: #ray parallel to the box
-                return False, np.inf
-            
-        else:
-            t1=(ymin- o[1])/d[1]
-            t2=(ymax-o[1])/d[1]
-        
-            if t1 > t2: 
-                temp=t2
-                t2=t1
-                t1=temp
-            
-            if t1>t_enter:
-                t_enter=t1
-
-            if t2<t_exit:
-                t_exit=t2
-                
-        
-            if t_enter > t_exit: 
-                return False,np.inf
-            
-            
-        #---------- z-slab (same steps as x) ----------
-        if d[2] == 0.0:
-                if o[2] < zmin or o[2] > zmax: #ray parallel to the box
+        for axis in range(3):
+            #axis=x,y and z
+            #d[axis] = 0: the ray is parallel to the axis-slab, its the axis never changes
+            if d[axis] == 0.0:
+                if o[axis] < bmin[axis] or o[axis] > bmax[axis]: #ray parallel to the box
+                    #outside the slab forever so it can never reach the box
                     return False, np.inf
                 
-        else:
-            t1=(zmin- o[2])/d[2]
-            t2=(zmax-o[2])/d[2]
-        
-            if t1 > t2: 
-                temp=t2
-                t2=t1
-                t1=temp
+            else: 
+                #the ray crosses the 2 planes for x: x = xmin and x = xmax: solve o[0] + t*d[0] = xmin (and = xmax)
+                #same with y and z
+                t1=(bmin[axis]- o[axis])/d[axis]
+                t2=(bmax[axis]-o[axis])/d[axis]
             
-            if t1>t_enter:
-                t_enter=t1
-
-            if t2<t_exit:
-                t_exit=t2
+                #if the ray moves towards -x,-y or -z it meets xmax first: swap so that t1 is the entry t2 the exit
+                if t1 > t2: 
+                    temp=t2
+                    t2=t1
+                    t1=temp
                 
-        
-            if t_enter > t_exit: 
-                return False,np.inf
+                #latest entry so far
+                if t1>t_enter:
+                    t_enter=t1
+
+                #earliest exit so far
+                if t2<t_exit:
+                    t_exit=t2
+                    
+            
+                #the entry is after the exit: no moment inside all slabs so far so it misses
+                if t_enter > t_exit: 
+                    return False,np.inf
+                
+                
         
         #inside all 3 slabs between t_enter and t_exit: hit. t_enter is where it enters the box
         return True,t_enter
