@@ -7,7 +7,7 @@ __pycache__/
 *.egg-info/
 .pytest_cache/
 
-# Numba cache (@njit(cache=True))
+# Numba cache 
 *.nbi
 *.nbc
 
