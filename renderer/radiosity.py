@@ -1,3 +1,4 @@
+
 """
 Calculates how light bounces between surfaces in the scene.
 Splits surfaces into small triangles called patches and calculates how much light passes between them to find their final colours.
@@ -31,11 +32,7 @@ def triangle_properties(vertices):
   area=length/2.0
 
   #Normalize the perpendicular vector to length 1 and its direction depends on the order of thr vertices.
-  normal=cross/length.
+  normal=cross/length
 
-#Return the 3 calculated properties.
-return centre,area,normal
-
-  
-
-  
+ #Return the 3 calculated properties.
+ return centre,area,normal
