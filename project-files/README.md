@@ -67,3 +67,24 @@ Each member contributes:
 - Tests and validation results.
 - Benchmark tables or plots.
 - Rendered images and known limitations.
+
+## Elisabeth part
+
+**My files:** in the renderer file are image,camera,light,materials,shading and vecmath.py (all of them are .py btw) in tools folder my files are compare_images.py and the test i made in tests folder is test_photograph_basics.py
+
+- To see how they work you need to check ur python version with : 
+py --version (if u dont have it installed it)
+- then type **ONLY ONCE** :
+py -m pip install numpy numba pillow pytest (do not install SciPy)
+
+- now to run the tests do :
+py -m pytest tests/test_photograph_basics.py -v
+
+- if the last line says **11 passed** u are all good
+- Compare an image with a reference
+py tools/compare_images.py project-files/reference/whitted.png project-files/reference/whitted.png
+- It should say **MATCH** (fewer than 1% of the pixels differ) add `--save-diff diff.png` at the end to see the different pixels in red LIKE:
+py tools/compare_images.py project-files/reference/whitted.png project-files/reference/whitted.png --save-diff diff.png
+
+
+
