@@ -1,11 +1,10 @@
-
 """
 Calculates how light bounces between surfaces in the scene.
 Splits surfaces into small triangles called patches and calculates how much light passes between them to find their final colours.
 """
 import numpy as np
 
-#To return centre,area and unit normal of a triangle.
+#Calculates and returns the centre, area and unit normal of a single triangle using its three vertices.
 def triangle_properties(vertices):
   #Converting the coordinates to a numpy array of floating point numbers.
   vertices=np.asarray(vertices,dtype=np.float64)
@@ -34,5 +33,27 @@ def triangle_properties(vertices):
   #Normalize the perpendicular vector to length 1 and its direction depends on the order of thr vertices.
   normal=cross/length
 
- #Return the 3 calculated properties.
- return centre,area,normal
+  #Return the 3 calculated properties.
+  return centre,area,normal
+
+#Calculates and returns the centre, area and unit normal of each triangular patch provided.
+def compute_patch_properties(patch_vertices):
+  #Convert the patch vertices to a floating-point array.
+  patch_vertices=np.asarray(patch_vertices,dtype=np.float64)
+
+  #Count the patches.
+  count=len(patch_vertices)
+
+  #Create arrays to store the results.
+  centres=np.zeros((count,3))
+  areas=np.zeros(count)
+  normals=np.zeros((count,3))
+
+  #Calculate the properties of each triangular patch.
+  for i in range(count):
+    centres[i],areas[i],normals[i]=triangle_properties(patch_vertices[i])
+
+  #Return the properties of all patches.
+  return centres,areas,normals
+
+  
