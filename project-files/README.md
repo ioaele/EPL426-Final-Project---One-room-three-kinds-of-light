@@ -45,9 +45,24 @@ EPL426 — Computer Graphics
 │   ├── glass_panes.json
 │   ├── spotlight.json
 │   ├── terrain.json
+│   ├── terrain.obj            # made by tools/generate_terrain.py
 │   └── teapot.obj
 │
+├── renderer/
+│   ├── intersections.py       # ray-triangle, ray-box, brute-force nearest/any hit
+│   ├── bvh_median.py          # BVH build, median split
+│   ├── bvh_sah.py             # BVH build, surface area heuristic
+│   └── bvh_walk.py            # BVH walk: nearest hit, any hit
+│
+├── tools/
+│   └── generate_terrain.py    # diamond-square terrain -> scenes/terrain.obj
+│
 ├── tests/
+│   ├── test_intersections.py
+│   ├── test_bvh.py            # BVH against brute force (median and SAH)
+│   └── test_terrain.py        # terrain level 8 BVH builds in < 1 minute
+│
+├── pytest.ini                 # pytest settings
 │
 ├── output/
 │
@@ -56,6 +71,24 @@ EPL426 — Computer Graphics
 ```
 
 ## Installation
+
+```bash
+pip install numpy numba matplotlib pillow pytest
+```
+
+## Running the tests
+
+```bash
+pytest
+```
+
+## Generating the terrain
+
+```bash
+python tools/generate_terrain.py 8
+```
+
+Writes `project-files/scenes/terrain.obj` (level 8 = 131 072 triangles).
 
 ## Running the renderer
 
