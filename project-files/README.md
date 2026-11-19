@@ -70,7 +70,7 @@ EPL426 — Computer Graphics
     └── figures/
 ```
 
-## Installation
+## Installation (only once)
 
 ```bash
 pip install numpy numba matplotlib pillow pytest
@@ -82,7 +82,7 @@ pip install numpy numba matplotlib pillow pytest
 pytest
 ```
 
-## Generating the terrain
+## Generating the terrain (Eleni)
 
 ```bash
 python tools/generate_terrain.py 8
@@ -127,7 +127,7 @@ py tools/compare_images.py project-files/reference/whitted.png project-files/ref
 - intersections.py: tests if a ray hits a triangle or a box, and the brute force (tests the ray against every triangle)
 - bvh_median.py and bvh_sah.py: build the BVH tree of boxes (median split or SAH with 12 bins)
 - bvh_walk.py: finds the nearest triangle a ray hits (bvh_nearest_hit) or if it hits anything (bvh_any_hit, for shadow rays)
-- generate_terrain.py: makes the fractal landscape (diamond-square) and writes terrain.obj
+- generate_terrain.py: makes the fractal landscape (with the diamond-square algorithm) and generates terrain.obj
 
 Run my tests:
 py -m pytest tests/test_intersections.py tests/test_bvh.py tests/test_terrain.py -v
