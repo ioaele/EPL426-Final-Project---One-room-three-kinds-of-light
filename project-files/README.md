@@ -129,15 +129,12 @@ py tools/compare_images.py project-files/reference/whitted.png project-files/ref
 - bvh_walk.py: finds the nearest triangle a ray hits (bvh_nearest_hit) or if it hits anything (bvh_any_hit, for shadow rays)
 - generate_terrain.py: makes the fractal landscape (diamond-square) and writes terrain.obj
 
-- Run my tests:
+Run my tests:
 py -m pytest tests/test_intersections.py tests/test_bvh.py tests/test_terrain.py -v
+   -> It should say **32 passed** (test_terrain takes a few seconds because it builds the BVH of 131072 triangles)
 
-- It should say **32 passed** (test_terrain takes a few seconds because it builds the BVH of 131072 triangles)
-
-- Make the terrain again (8 is the level, level L gives 2*4^L triangles):
-py tools/generate_terrain.py 8
-
-- It should output **level 8: 66049 points, 131072 triangles** and it generates project-files/scenes/terrain.obj
+Make the terrain again (8 is the level, level L gives 2*4^L triangles): py tools/generate_terrain.py 8
+   -> It should output **level 8: 66049 points, 131072 triangles** and it generates project-files/scenes/terrain.obj
 
 
 
