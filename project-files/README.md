@@ -45,24 +45,24 @@ EPL426 — Computer Graphics
 │   ├── glass_panes.json
 │   ├── spotlight.json
 │   ├── terrain.json
-│   ├── terrain.obj            # made by tools/generate_terrain.py
+│   ├── terrain.obj            # (Eleni) made by tools/generate_terrain.py
 │   └── teapot.obj
 │
 ├── renderer/
-│   ├── intersections.py       # ray-triangle, ray-box, brute-force nearest/any hit
-│   ├── bvh_median.py          # BVH build, median split
-│   ├── bvh_sah.py             # BVH build, surface area heuristic
-│   └── bvh_walk.py            # BVH walk: nearest hit, any hit
+│   ├── intersections.py       # (Eleni) ray-triangle, ray-box, brute-force nearest/any hit
+│   ├── bvh_median.py          # (Eleni) BVH build, median split
+│   ├── bvh_sah.py             # (Eleni) BVH build, surface area heuristic
+│   └── bvh_walk.py            # (Eleni) BVH walk: nearest hit, any hit
 │
 ├── tools/
-│   └── generate_terrain.py    # diamond-square terrain -> scenes/terrain.obj
+│   └── generate_terrain.py    # (Eleni) diamond-square terrain -> scenes/terrain.obj
 │
 ├── tests/
-│   ├── test_intersections.py
-│   ├── test_bvh.py            # BVH against brute force (median and SAH)
-│   └── test_terrain.py        # terrain level 8 BVH builds in < 1 minute
+│   ├── test_intersections.py  # (Eleni) ray-triangle, ray-box and brute-force tests
+│   ├── test_bvh.py            # (Eleni) BVH against brute force (median and SAH)
+│   └── test_terrain.py        # (Eleni) terrain level 8 BVH builds in < 1 minute
 │
-├── pytest.ini                 # pytest settings
+├── pytest.ini                 # (Eleni) pytest settings
 │
 ├── output/
 │
@@ -118,6 +118,31 @@ py -m pytest tests/test_photograph_basics.py -v
 py tools/compare_images.py project-files/reference/whitted.png project-files/reference/whitted.png
 - It should say **MATCH** (fewer than 1% of the pixels differ) add `--save-diff diff.png` at the end to see the different pixels in red LIKE:
 py tools/compare_images.py project-files/reference/whitted.png project-files/reference/whitted.png --save-diff diff.png
+
+## Eleni part
+
+**My files:** in the renderer folder: intersections.py, bvh_median.py, bvh_sah.py and bvh_walk.py. In the tools folder: generate_terrain.py. My tests in the tests folder: test_intersections.py, test_bvh.py and test_terrain.py. I also made pytest.ini (so the tests can find the renderer and tools folders) and the terrain file project-files/scenes/terrain.obj.
+
+**What they do:**
+- intersections.py: tests if a ray hits a triangle or a box, and the brute force (tests the ray against every triangle)
+- bvh_median.py and bvh_sah.py: build the BVH tree of boxes (median split or SAH with 12 bins)
+- bvh_walk.py: finds the nearest triangle a ray hits (bvh_nearest_hit) or if it hits anything (bvh_any_hit, for shadow rays)
+- generate_terrain.py: makes the fractal landscape (diamond-square) and writes terrain.obj
+
+- To see how they work, install the libraries **ONLY ONCE**:
+py -m pip install numpy numba matplotlib pillow pytest (do not install SciPy)
+
+- Run my tests:
+py -m pytest tests/test_intersections.py tests/test_bvh.py tests/test_terrain.py -v
+
+- If the last line says **32 passed** you are all good (test_terrain takes a few seconds, it builds the BVH of 131072 triangles)
+
+- Make the terrain again (8 is the level, level L gives 2*4^L triangles):
+py tools/generate_terrain.py 8
+
+- It should say **level 8: 66049 points, 131072 triangles** and it writes project-files/scenes/terrain.obj
+
+
 
 
 
