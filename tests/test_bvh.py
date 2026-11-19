@@ -15,10 +15,10 @@ BUILDS=[build_bvh_median,build_bvh_sah]
 
 def random_triangles(N):
     #N small random triangles inside the cube [-1, 1]
-    rng=np.random.default_rng(0)  #fixed seed so the same triangles every run
-    v0=rng.uniform(-1,1,(N,3))
-    v1=v0+rng.uniform(-0.2,0.2,(N,3))
-    v2=v0+rng.uniform(-0.2,0.2,(N,3))
+    random=np.random.default_rng(0)  #fixed seed so the same triangles every run
+    v0=random.uniform(-1,1,(N,3))
+    v1=v0+random.uniform(-0.2,0.2,(N,3))
+    v2=v0+random.uniform(-0.2,0.2,(N,3))
     return v0,v1,v2
 
 
@@ -76,10 +76,10 @@ def test_nearest_hit_same_as_brute_force():
     v0,v1,v2=random_triangles(1000)
     for build in BUILDS:
         tree=build(v0,v1,v2)
-        rng=np.random.default_rng(1)
+        random=np.random.default_rng(1)
         for i in range(1000):
-            o=rng.uniform(-2,2,3)
-            d=rng.normal(size=3)
+            o=random.uniform(-2,2,3)
+            d=random.normal(size=3)
             #*tree = the 7 tree arrays (node_min,node_max,left,right,start,count,tri_order) passed one by one
             assert bvh_nearest_hit(o,d,v0,v1,v2,1e-4,np.inf,*tree)==brute_force_nearest_hit(o,d,v0,v1,v2,1e-4,np.inf)
 
@@ -88,10 +88,10 @@ def test_any_hit_same_as_brute_force():
     v0,v1,v2=random_triangles(1000)
     for build in BUILDS:
         tree=build(v0,v1,v2)
-        rng=np.random.default_rng(2)
+        random=np.random.default_rng(2)
         for i in range(1000):
-            o=rng.uniform(-2,2,3)
-            d=rng.normal(size=3)
+            o=random.uniform(-2,2,3)
+            d=random.normal(size=3)
             assert bvh_any_hit(o,d,v0,v1,v2,1e-4,np.inf,*tree)==brute_force_any_hit(o,d,v0,v1,v2,1e-4,np.inf)
 
 
@@ -100,10 +100,10 @@ def test_short_rays_same_as_brute_force():
     v0,v1,v2=random_triangles(1000)
     for build in BUILDS:
         tree=build(v0,v1,v2)
-        rng=np.random.default_rng(3)
+        random=np.random.default_rng(3)
         for i in range(1000):
-            o=rng.uniform(-2,2,3)
-            d=rng.normal(size=3)
+            o=random.uniform(-2,2,3)
+            d=random.normal(size=3)
             assert bvh_nearest_hit(o,d,v0,v1,v2,1e-4,0.5,*tree)==brute_force_nearest_hit(o,d,v0,v1,v2,1e-4,0.5)
             assert bvh_any_hit(o,d,v0,v1,v2,1e-4,0.5,*tree)==brute_force_any_hit(o,d,v0,v1,v2,1e-4,0.5)
 
@@ -113,10 +113,10 @@ def test_rays_parallel_to_the_axes():
     v0,v1,v2=random_triangles(1000)
     for build in BUILDS:
         tree=build(v0,v1,v2)
-        rng=np.random.default_rng(4)
+        random=np.random.default_rng(4)
         directions=[(1,0,0),(0,-1,0),(0,0,1),(1,1,0),(0,1,-1)]
         for i in range(200):
-            o=rng.uniform(-1,1,3)
+            o=random.uniform(-1,1,3)
             for d in directions:
                 d=np.array(d,dtype=float)
                 assert bvh_nearest_hit(o,d,v0,v1,v2,1e-4,np.inf,*tree)==brute_force_nearest_hit(o,d,v0,v1,v2,1e-4,np.inf)
