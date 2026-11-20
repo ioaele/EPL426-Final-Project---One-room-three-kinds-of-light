@@ -135,7 +135,7 @@ def compute_visibility(centre_i,normal_i,centre_j,normal_j,any_hit):
     return False
 
   #Unit direction from patch i to j.
-  direction=direction/distance.
+  direction=direction/distance
 
   #Check thet patch i faces towards j.
   if np.dot(normal_i,direction)<=0.0:
@@ -150,10 +150,10 @@ def compute_visibility(centre_i,normal_i,centre_j,normal_j,any_hit):
   blocked=any_hit(start,direction,distance-2e-4)
   
   #The patched are visible.
-  return not blocked.
+  return not blocked
     
 #Estimates how much light passes between 2 patches using the small-disc formula.
-def compute_from_factor_disc(centre_i,normal_i,area_i,centre_j,normal_j,area_j,any_hit):
+def compute_form_factor_disc(centre_i,normal_i,area_i,centre_j,normal_j,area_j,any_hit):
   #Vector and disatnce between the patch centres.
   direction=centre_j-centre_i
   distance=np.linalg.norm(direction)
@@ -184,12 +184,15 @@ def compute_from_factor_disc(centre_i,normal_i,area_i,centre_j,normal_j,area_j,a
   
 
 #Estimates how much light reaches each patch by shooting random rays from source patch.
-def compute_from_factor_rays(patch_index,patch_vertices,centres,normals,areas,ray_count,any_hit,seed=0):
+def compute_form_factor_rays(patch_index,patch_vertices,centres,normals,areas,ray_count,any_hit,seed=0):
   #Number of patches.
   patch_count=len(centres)
 
   #Start with zero form factors.
   form_factors=np.zeros(patch_count,dtype=np.float64)
+  #To avoid division by zero if no rays are requested.
+  if ray_count<=0:
+    return form_factors
 
   #Get the source patch.
   triangle=patch_vertices[patch_index]
@@ -225,7 +228,7 @@ def compute_from_factor_rays(patch_index,patch_vertices,centres,normals,areas,ra
     phi=2.0*np.pi*rng.random()
 
     #Direction using the patch coordinate system.
-    direction=(u*(sin_theta*np.cos(phi)+v*(sin_theta*np.sin(phi)+normal*cos_theta)
+    direction = (u *(sin_theta*np.cos(phi))+v*(sin_theta*np.sin(phi))+normal * cos_theta)
 
     #Make the direction unit length.
     direction=direction/np.linalg.norm(direction)
@@ -240,7 +243,7 @@ def compute_from_factor_rays(patch_index,patch_vertices,centres,normals,areas,ra
         if other_index==patch_index:
              continue
         #Find where the ray hits this patch.
-        hit=ray_triangle_intersect(point,direction.patch_vertices[other_index])
+        hit=ray_triangle_intersect(point,direction,patch_vertices[other_index])
         #Keep the closest hit.
         if hit is not None and hit<hit_distance:
             hit_distance=hit
@@ -261,8 +264,71 @@ def compute_from_factor_rays(patch_index,patch_vertices,centres,normals,areas,ra
   #Return the form factors from thuis patch.
   return form_factors
 
+#Finds the distance where a ray hits a triangle.
+def ray_triangle_intersect(origin,direction,vertices):
+  #Triangle corners.
+  v0,v1,v2=vertices
+  #Two triangle edges.
+  edge1=v1-v0
+  edge2=v2-v0
+
+  #Vector used in the intesection test.
+  h=np.cross(direction,edge2)
+  a=np.dot(edge1,h)
+
+  #The ray is parallel to the triangle.
+  if abs(a)<1e-12:
+    return None
+
+  #Barycentric coordinate u.
+  f=1.0/a
+  s=origin-v0
+  u=f*np.dot(s,h)
+
+  #The hit is outside the triangle.
+  if u<0.0 or u>1.0:
+    return None
+
+  #Barycentric coordinate v.
+  q=np.cross(s,edge1)
+  v=f*np.dot(direction,q)
+
+  #The hit is outside the triangle.
+  if v<0.0 or u+v>1.0:
+    return None
+
+  #Distance along the ray.
+  t=f*np.dot(edge2,q)
+  #The hit is behind the ray.
+  if t<=1e-8:
+    return None
+
+  #Return the positive hit distance.
+  return t
+
 #Calculate the light leaving each patch by repeatedly updating the solution using the full form-factor matrix.
-def solve_radiosity_full_matrix():
+def solve_radiosity_full_matrix(emissions,reflectances,form_factors,iterations=100,tolerance=1e-4):
+  #Number of patches.
+  patch_count=len(emissions)
+  #Start with only emitted light.
+  radiosity=emissions.copy()
+
+  #repeat the radiosity equatoin.
+  for iteration in range(iterations):
+    #Calculate incoming light for every patch.
+    incoming=form_factors@radiosity
+    #Add emitted light and reflected incoming light.
+    new_radiosity=emissions+reflectances*incoming
+    #Find the largest change from the last step
+    change=np.max(np.abs(new_radiosity-radiosity))
+    #Keep the new result.
+    radiosity=new_radiosity
+    #Stop when the solution barely changes.
+    if change<tolerance:
+      break
+
+  #Return the final radiosity values.
+  return radiosity
 
 #Sends a patch's unshot light to the other patches and updates their total and unsot light.
 def shoot_patch_light():
@@ -276,5 +342,3 @@ def separate_direct_light():
 #Estimates the remaining unshit light as an ambient term for displaying an unfinished solution.
 def compute_ambient_term():
   
-
-
