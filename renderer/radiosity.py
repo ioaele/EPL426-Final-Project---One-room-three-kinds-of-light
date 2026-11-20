@@ -90,7 +90,7 @@ def create_patches(triangles,material_ids,patch_mask,patch_size=0.6):
       continue
 
     #Check that the triangle has a valid area.
-    triangle_properties(triangles[triangles_id])
+    triangle_properties(triangles[triangle_id])
 
     #Keep triangles that still need to be checked.
     stack=[triangles[triangle_id]]
@@ -125,10 +125,63 @@ def create_patches(triangles,material_ids,patch_mask,patch_size=0.6):
   return (np.asarray(patches,dtype=np.float64).reshape(-1,3,3), np.asarray(patch_material_ids,dtype=np.int64),np.asarray(source_triangle_ids,dtype=np.int64))
 
 #Checks whether light can travel between 2 patches without being blocked.
-def compute_visibility():
+def compute_visibility(centre_i,normal_i,centre_j,normal_j,any_hit):
+  #Vector from patch i to j.
+  direction=centre_j-centre_i
+  distance=np.linalg.norm(direction)
 
+  #Check that the patches are apart.
+  if distance<=1e-12:
+    return False
+
+  #Unit direction from patch i to j.
+  direction=direction/distance.
+
+  #Check thet patch i faces towards j.
+  if np.dot(normal_i,direction)<=0.0:
+    return False
+  #Check thet patch j faces towards i.
+  if np.dot(normal_j,-direction)<=0.0:
+    return False
+    
+  #Start a bit above i to avoid hitting itself.
+  start=centre_i+1e-4*normal_i
+  #Check if something blocks the ray.
+  blocked=any_hit(start,direction,distance-2e-4)
+  
+  #The patched are visible.
+  return not blocked.
+    
 #Estimates how much light passes between 2 patches using the small-disc formula.
-def compute_form_factor_disc():
+def compute_from_factor_disc(centre_i,normal_i,area_i,centre_j,normal_j,area_j,any_hit):
+  #Vector and disatnce between the patch centres.
+  direction=centre_j-centre_i
+  distance=np.linalg.norm(direction)
+
+  #Very close or identical patches get no form factor.
+  if distance<=1e-12:
+    return 0.0
+
+  #Unit direction from patch i to j.
+  direction=direction/distance
+  #Cosine at patch i.
+  cos_i=np.dot(normal_i,direction)
+  #Cosine at patch j.
+  cos_j=np.dot(normal_j,-direction)
+
+  #Light can't leave or arrive from behind a patch.
+  if cos_i<=0.0 or cos_j<=0.0:
+    return 0.0
+
+  #Check if the patches can see each other.
+  if not compute_visibility(centre_i,normal_i,centre_j,normal_j,any_hit):
+    return 0.0
+  #Small-disc from factor formula.
+  form_factor=area_j*cos_i*cos_j/(np.pi*distance*distance)
+
+  #A form factor can't be larger than 1.
+  return min(form_factor,1.0)
+  
 
 #Estimates how much light reaches each patch by shooting random rays from source patch.
 def compute_from_factor_rays():
@@ -148,4 +201,5 @@ def separate_direct_light():
 #Estimates the remaining unshit light as an ambient term for displaying an unfinished solution.
 def compute_ambient_term():
   
-  
+
+
