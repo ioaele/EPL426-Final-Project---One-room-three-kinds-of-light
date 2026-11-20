@@ -184,7 +184,82 @@ def compute_from_factor_disc(centre_i,normal_i,area_i,centre_j,normal_j,area_j,a
   
 
 #Estimates how much light reaches each patch by shooting random rays from source patch.
-def compute_from_factor_rays():
+def compute_from_factor_rays(patch_index,patch_vertices,centres,normals,areas,ray_count,any_hit,seed=0):
+  #Number of patches.
+  patch_count=len(centres)
+
+  #Start with zero form factors.
+  form_factors=np.zeros(patch_count,dtype=np.float64)
+
+  #Get the source patch.
+  triangle=patch_vertices[patch_index]
+  normal=normals[patch_index]
+
+  #Two edges of the source patch.
+  edge1=triangle[1]-triangle[0]
+  edge2=triangle[2]-triangle[0]
+
+  #First direction in the patch plane.
+  u=edge1/np.linalg.norm(edge1)
+  #Second direction in the patch plane.
+  v=np.cross(normal,u)
+  v=v/np.linalg.norm(v)
+
+  #Use a fixed seed for repeatable results.
+  rng=np.random.default_rng(seed)
+
+  #Shoot rays from random points on the source patch.
+  for ray_index in range(ray_count):
+    #Random barycentric coordinates.
+    r1=rng.random()
+    r2=rng.random()
+    #Keep the point inside the triangle.
+    if r1+r2>1.0:
+      r1=1.0-r1
+      r2=1.0-r2
+    #Random point on the source patch.
+    point=triangle[0]+r1*edge1+r2*edge2
+    #Random direction in the upper hemisphere.
+    cos_theta=rng.random()
+    sin_theta=np.sqrt(max(0.0,1.0-cos_theta*cos_theta))
+    phi=2.0*np.pi*rng.random()
+
+    #Direction using the patch coordinate system.
+    direction=(u*(sin_theta*np.cos(phi)+v*(sin_theta*np.sin(phi)+normal*cos_theta)
+
+    #Make the direction unit length.
+    direction=direction/np.linalg.norm(direction)
+
+    #Find the closest patch hit by this ray.
+    hit_index=-1
+    hit_distance=np.inf
+
+    #Test the ray against every patch.
+    for other_index in range(patch_count):
+        #Don't test the source patch with itself.
+        if other_index==patch_index:
+             continue
+        #Find where the ray hits this patch.
+        hit=ray_triangle_intersect(point,direction.patch_vertices[other_index])
+        #Keep the closest hit.
+        if hit is not None and hit<hit_distance:
+            hit_distance=hit
+            hit_index=other_index
+    #Ignore rays that dont hit another patch.
+    if hit_index==-1:
+      continue
+    #Start slightly above the patch to avoid self intersection.
+    start=point+1e-4*normal
+    #Check whether something blocks the ray.
+    blocked=any_hit(start,direction,hit_distance-2e-4)
+    #Count only visible hits.
+    if not blocked:
+      form_factors[hit_index]+=1.0
+  #Turn hit counts into form factors.
+  form_factors=form_factors/ray_count
+  
+  #Return the form factors from thuis patch.
+  return form_factors
 
 #Calculate the light leaving each patch by repeatedly updating the solution using the full form-factor matrix.
 def solve_radiosity_full_matrix():
