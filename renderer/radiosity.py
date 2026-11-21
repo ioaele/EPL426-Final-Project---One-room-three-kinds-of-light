@@ -331,7 +331,27 @@ def solve_radiosity_full_matrix(emissions,reflectances,form_factors,iterations=1
   return radiosity
 
 #Sends a patch's unshot light to the other patches and updates their total and unsot light.
-def shoot_patch_light():
+def shoot_patch_light(patch_index,unshot_radiocity,total_radiocity,reflectances,areas,form_factors):
+  #Light that this pach still needs to send.
+  send_light=unshot_radiocity[patch_index]
+  #If there isn't any unshot light.
+  if sent_light<=0.0:
+    return
+  #Send light to every other patch.
+  for other_index in range(len(unshot_radiocity)):
+    #A patch does not send light to itself.
+    if other_index== patch_index:
+      continue
+    #Area ratio from the shooting patch to the receiving patch.
+    area_ratio=areas[patch_index]/areas[other_index]
+    #Light received by the other patch.
+    received_light=(reflectances[other_index]*form_factors[patch_index,other_index]*sent_light)
+    #Add the received light to the other patch.
+    total_radiocity[other_index]+=received_light
+    #Keep the received light ready to be sent.
+    unshot_radiocity[other_index]+=received_light
+  #this patch has sent all the unshot light.
+  unshot_radiocity[patch_index]=0.0
 
 #Calculates radiosity by repeatedly choosing a patch and sending its unshot light ti the others.
 def solve_radiosity_progressive():
