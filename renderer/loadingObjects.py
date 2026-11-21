@@ -11,7 +11,7 @@ def load_obj(fpath):
                 continue
             tokens=ln.split()
             if tokens[0]=="v":
-                vert.append([float(tokens[1]), float(tokens[2], float(tokens[3]))])
+                vert.append([float(tokens[1]), float(tokens[2]), float(tokens[3])])
             elif tokens[0]=="f":
                 polygons=[]
                 for tok in tokens[1:]:
