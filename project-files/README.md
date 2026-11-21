@@ -137,6 +137,32 @@ Make the terrain again (8 is the level, level L gives 2*4^L triangles): py tools
    -> It should output **level 8: 66049 points, 131072 triangles** and it generates project-files/scenes/terrain.obj
 
 
+## Katerina Part
+**My files** 
+In the *renderer* folder: radiosity.py
+My tests files in the *tests* folder: test_radiosity.py
+My benchmark in the *benchmarks* folders: benchmarks_radiosity.py
 
+**What they do**
+My module calculates the light that bounces between diffuse surfaces in the scene. Radiosity splits the diffuse surface into small triagles called 'patches' and each patch can receive light, reflect a part of it and send light to other patches. This creates the bounced light that a normal ray tracer doesn't calculate. If the scene has mirrors and glass, they remain in the scene and can block light between the patches but are not turned into patches, because radiosity can't handle specular reflection or refractor.
 
+**Function description**
+*radiosity.py*
+- triangle_properties(): Calculates and returns the centre, area and unit normal of a single triangle using its three vertices.
+- compute_patch_properties():Calculates and returns the centre, area and unit normal of every patch.
+- create_patches(): Splits diffuse surfeces into small triagular patches and stores theis material and source triagles IDs.
+- compute_visibility(): Checks whether light can travel between two patches without being blocked.
+- compute_form_factor_disc(): Calculates the form factor between two patches using the small-disc formula.
+- compute_form_factor_rays(): Estimates form factors by shooting random rays from one patch and counting witch patches they hit.
+- ray_triangle_intersect(): Finds the distance where a ray hits a triangle.
+- solve_radiocity_full_matrix(): Solves radiosity using the full form factor matrix.
+- shoot_patch_light(): Sends the unshot light of one patch to all the other patches.
+- solve_radiosity_progressive(): repeatedly chooses the patch with the most unshot light ans sends the patches light to the others.
+- seperate_direct_light(): Saves the light received directly from the light panel before the diffuse bounces start.
+- compute_ambient_term(): Estimates the light that is still unshot and adds it as an ambient term for an unfinished solution.
 
+**Tests**
+Run them with: py -m pytest tests/test_radiosity.py -v
+
+Furnace test: The Furnace scene ia a closed box where every surface emits *E=1* and reflects *0.5*. Because every patch sees only the inside of the box the form factors of each patch add up to 1.
+The radiosity equation equals to => *B=1+0.5B* and the expected result equals to *B=2*.
