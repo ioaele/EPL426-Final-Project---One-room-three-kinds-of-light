@@ -139,14 +139,15 @@ Make the terrain again (8 is the level, level L gives 2*4^L triangles): py tools
 
 ## Katerina Part
 **My files** 
-In the *renderer* folder: radiosity.py
-My tests files in the *tests* folder: test_radiosity.py
+In the *renderer* folder: radiosity.py \n
+My tests files in the *tests* folder: test_radiosity.py \n
 My benchmark in the *benchmarks* folders: benchmarks_radiosity.py
 
 **What they do**
 My module calculates the light that bounces between diffuse surfaces in the scene. Radiosity splits the diffuse surface into small triagles called 'patches' and each patch can receive light, reflect a part of it and send light to other patches. This creates the bounced light that a normal ray tracer doesn't calculate. If the scene has mirrors and glass, they remain in the scene and can block light between the patches but are not turned into patches, because radiosity can't handle specular reflection or refractor.
 
 **Function description**
+
 *radiosity.py*
 - triangle_properties(): Calculates and returns the centre, area and unit normal of a single triangle using its three vertices.
 - compute_patch_properties():Calculates and returns the centre, area and unit normal of every patch.
@@ -162,7 +163,6 @@ My module calculates the light that bounces between diffuse surfaces in the scen
 - compute_ambient_term(): Estimates the light that is still unshot and adds it as an ambient term for an unfinished solution.
 
 **Tests**
-Run them with: py -m pytest tests/test_radiosity.py -v
+Run them with: *py -m pytest tests/test_radiosity.py -v*
 
-Furnace test: The Furnace scene ia a closed box where every surface emits *E=1* and reflects *0.5*. Because every patch sees only the inside of the box the form factors of each patch add up to 1.
-The radiosity equation equals to => *B=1+0.5B* and the expected result equals to *B=2*.
+*Furnace test*: The Furnace scene ia a closed box where every surface emits *E=1* and reflects *0.5*. Because every patch sees only the inside of the box the form factors of each patch add up to 1. The radiosity equation equals to => *B=1+0.5B* and the expected result equals to *B=2*.
