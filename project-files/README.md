@@ -138,9 +138,12 @@ Make the terrain again (8 is the level, level L gives 2*4^L triangles): py tools
 
 
 ## Katerina Part
-**My files** 
-In the *renderer* folder: radiosity.py \n
-My tests files in the *tests* folder: test_radiosity.py \n
+**My files** :
+
+In the *renderer* folder: radiosity.py 
+
+My tests files in the *tests* folder: test_radiosity.py 
+
 My benchmark in the *benchmarks* folders: benchmarks_radiosity.py
 
 **What they do**
