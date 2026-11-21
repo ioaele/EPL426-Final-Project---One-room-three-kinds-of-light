@@ -28,7 +28,7 @@ def rotation(axis, angleDeg):
     return M
 
 def tranStep(step):
-    transformType=str(step[0]).lower
+    transformType=str(step[0]).lower()
     transformValues=step[1:]
     M=np.eye(4, dtype=np.float64)
     
@@ -48,9 +48,15 @@ def tranStep(step):
             sx=float(transformValues[0])
             sy=float(transformValues[0])
             sz=float(transformValues[0])
-            M[0,0]=sx
-            M[1,1]=sy
-            M[2,2]=sz
+        elif(len(transformValues)==3):
+            sx=float(transformValues[0])
+            sy=float(transformValues[1])
+            sz=float(transformValues[2])
+        else:
+            raise ValueError(f"Usupported scale arguments: {transformValues!r}")
+        M[0,0]=sx
+        M[1,1]=sy
+        M[2,2]=sz
     else:
         raise ValueError(f"Unsupported transformation arguments: {transformValues!r}")
     return M
