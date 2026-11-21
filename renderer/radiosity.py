@@ -354,7 +354,16 @@ def shoot_patch_light(patch_index,unshot_radiosity,total_radiosity,reflectances,
   unshot_radiosity[patch_index]=0.0
 
 #Calculates radiosity by repeatedly choosing a patch and sending its unshot light ti the others.
-def solve_radiosity_progressive():
+def solve_radiosity_progressive(emissions,reflectances,areas,form_factors,tolerance=0.01,max_shots=1000):
+  #Start with only emitted light.
+  total_emission=np.sum(emissions*areas[:,None],axis=0)
+  #Light that has not been sent yet.
+  unshot_radiosity=emissions.copy()
+  #Total emitted light in the scene.
+  total_emission=np.sum(emissions*areas[:,None],axis=0)
+
+  #Repeat until little light is still unshot.
+#.....
 
 #Saves the direct-light contribution seperately before light starts bouncing between diffuse surfaces.
 def separate_direct_light():
