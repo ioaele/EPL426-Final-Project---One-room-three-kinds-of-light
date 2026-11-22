@@ -137,7 +137,7 @@ def compute_visibility(centre_i,normal_i,centre_j,normal_j,any_hit):
   #Unit direction from patch i to j.
   direction=direction/distance
 
-  #Check thet patch i faces towards j.
+  #Check that patch i faces towards j.
   if np.dot(normal_i,direction)<=0.0:
     return False
   #Check thet patch j faces towards i.
@@ -154,7 +154,7 @@ def compute_visibility(centre_i,normal_i,centre_j,normal_j,any_hit):
     
 #Estimates how much light passes between 2 patches using the small-disc formula.
 def compute_form_factor_disc(centre_i,normal_i,area_i,centre_j,normal_j,area_j,any_hit):
-  #Vector and disatnce between the patch centres.
+  #Vector and distance between the patch centres.
   direction=centre_j-centre_i
   distance=np.linalg.norm(direction)
 
@@ -254,7 +254,7 @@ def compute_form_factor_rays(patch_index,patch_vertices,centres,normals,areas,ra
     #Start slightly above the patch to avoid self intersection.
     start=point+1e-4*normal
     #Check whether something blocks the ray.
-    blocked=any_hit(start,direction,hit_distance-2e-4)
+    blocked=any_hit(start,direction,max(0.0,hit_distance-2e-4))
     #Count only visible hits.
     if not blocked:
       form_factors[hit_index]+=1.0
@@ -335,7 +335,7 @@ def shoot_patch_light(patch_index,unshot_radiosity,total_radiosity,reflectances,
   #Light that this pach still needs to send.
   sent_light=unshot_radiosity[patch_index]
   #If there isn't any unshot light.
-  if sent_light<=0.0:
+  if np.all(sent_light<=0.0):
     return
   #Send light to every other patch.
   for other_index in range(len(unshot_radiosity)):
@@ -399,6 +399,10 @@ def compute_ambient_term(unshot_radiosity,reflectances,areas):
   #Area weighted average reflectance.
   average_reflectance=np.sum(reflectances*areas)/total_area
 
+  #Avoid division by zero.
+  if average_reflectance>=1.0:
+    return np.zeros(3)
+    
   #Total unshot light per color channel.
   remaining_light=np.sum(unshot_radiosity*areas[:,None],axis=0)/total_area
 
