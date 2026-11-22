@@ -392,6 +392,23 @@ def separate_direct_light(emissions,reflectance,areas,form_factors):
   #Return the direct light received by every patch.
   return direct_radiocity
 
-#Estimates the remaining unshit light as an ambient term for displaying an unfinished solution.
-def compute_ambient_term():
+#Estimates the remaining unshot light as an ambient term for displaying an unfinished solution.
+def compute_ambient_term(unshot_radiosity,reflectances.areas):
+  #Total patch area.
+  total_area=np.sum(areas)
+  #Area weighted average reflectance.
+  average_reflectance=np.sum(reflectances*areas)/total_area
+
+  #Total unshot light per color channel.
+  remaining_light=np.sum(unshot_radiosity*areas[:,None],axis=1)/total_area
+
+  #Formula for ambient light.
+  ambient=(remaining_light*average_reflectance/(1.0-average_reflectance))
+
+  #Return the ambient light color.
+  return ambient
+
+
+
+  
   
