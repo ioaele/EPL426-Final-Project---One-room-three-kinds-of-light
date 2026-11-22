@@ -1,6 +1,6 @@
 import numpy as np
 
-def load_obj(fpath):
+def loadObj(fpath):
     vert=[]
     faces=[]
 
