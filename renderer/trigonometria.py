@@ -1,7 +1,9 @@
 import numpy as np
 import math
 from itertools import combinations
+from pathlib import Path
 from .transformations import tranPoints
+from .loadingObjects import loadObj
 
 
 def rowNorm(vectors):
@@ -128,7 +130,7 @@ def sph20(detail):
         faces=np.asarray(newFaces, dtype=np.int64)
     return np.asarray(vList, dtype=np.float64), faces
   
-def trigonopoiisi(geometryD, matrix, baseDir, smooth=False):
+def trigonopoiisi(geometryD, matrix, baseDirectory, smooth=False):
     tipos=geometryD["type"].lower()
     M=np.asarray(matrix, dtype=np.float64)
     if(tipos=="quad"):
@@ -210,9 +212,26 @@ def trigonopoiisi(geometryD, matrix, baseDir, smooth=False):
         n2=rowNorm(v2-worldCntr)
         return v0, v1, v2, n0, n1, n2
     elif (tipos=="mesh"):
-        v0=tranPoints(ps[facesTrigs[:, 0], M)
-        v1=tranPoints(ps[facesTrigs[:, 1], M)
-        v2=tranPoints(ps[facesTrigs[:, 2], M)
+        if "file" in geometryD:
+            fullPath=Path(baseDirectory)/geometryD["file"]
+            verts, faces=loadObj(fullPath)
+        else:
+            verts=np.asarray(geometryD["vertices"], dtype=np.float64)
+            faces=geometryD["faces"]
+            
+            trigFaces=[]
+            for poligono in faces:
+                for i in range(1, (len(poligono)-1)):
+                    trigFaces.append([poligono[0], poligono[i], poligono[i+1]])
+            faces=np.asarray(trigFaces, dtype=np.int64).reshape(-1, 3)
+            
+        if(faces.size==0):
+            empty=np.zeros((0, 3), dtype=np.float64)
+            return empty.copy(), empty.copy(), empty.copy(), empty.copy(), empty.copy(), empty.copy()
+        
+        v0=tranPoints(verts[faces[:, 0]], M)
+        v1=tranPoints(verts[faces[:, 1]], M)
+        v2=tranPoints(verts[faces[:, 2]], M)
         n0, n1, n2=normals(v0, v1, v2, smooth=smooth)
         return v0, v1, v2, n0, n1, n2
     else:
