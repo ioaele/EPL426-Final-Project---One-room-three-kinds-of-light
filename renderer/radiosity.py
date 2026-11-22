@@ -356,7 +356,7 @@ def shoot_patch_light(patch_index,unshot_radiosity,total_radiosity,reflectances,
 #Calculates radiosity by repeatedly choosing a patch and sending it's unshot light to the others.
 def solve_radiosity_progressive(emissions,reflectances,areas,form_factors,tolerance=0.01,max_shots=1000):
   #Start with only emitted light.
-  total_emission=np.sum(emissions*areas[:,None],axis=0)
+  total_radiosity=emissions.copy()
   #Light that has not been sent yet.
   unshot_radiosity=emissions.copy()
   #Total emitted light in the scene.
@@ -378,37 +378,32 @@ def solve_radiosity_progressive(emissions,reflectances,areas,form_factors,tolera
   return total_radiosity
 
 #Saves the direct-light contribution seperately before light starts bouncing between diffuse surfaces.
-def separate_direct_light(emissions,reflectance,areas,form_factors):
+def separate_direct_light(emissions,reflectances,areas,form_factors):
   #Start with the emmited light.
   direct_radiosity=emissions.copy()
   #Find the patch with the most emitted light.
   light_patch=int(np.argmax(np.sum(emissions*areas[:,None],axis=1)))
   #Make a copy of the unshot light.
-  unshot_radiosity=emission.copy()
+  unshot_radiosity=emissions.copy()
 
   #Send light from the light patch once.
   shoot_patch_light(light_patch,unshot_radiosity,direct_radiosity,reflectances,areas,form_factors)
 
   #Return the direct light received by every patch.
-  return direct_radiocity
+  return direct_radiosity
 
 #Estimates the remaining unshot light as an ambient term for displaying an unfinished solution.
-def compute_ambient_term(unshot_radiosity,reflectances.areas):
+def compute_ambient_term(unshot_radiosity,reflectances,areas):
   #Total patch area.
   total_area=np.sum(areas)
   #Area weighted average reflectance.
   average_reflectance=np.sum(reflectances*areas)/total_area
 
   #Total unshot light per color channel.
-  remaining_light=np.sum(unshot_radiosity*areas[:,None],axis=1)/total_area
+  remaining_light=np.sum(unshot_radiosity*areas[:,None],axis=0)/total_area
 
   #Formula for ambient light.
   ambient=(remaining_light*average_reflectance/(1.0-average_reflectance))
 
   #Return the ambient light color.
   return ambient
-
-
-
-  
-  
