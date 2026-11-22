@@ -378,7 +378,19 @@ def solve_radiosity_progressive(emissions,reflectances,areas,form_factors,tolera
   return total_radiosity
 
 #Saves the direct-light contribution seperately before light starts bouncing between diffuse surfaces.
-def separate_direct_light():
+def separate_direct_light(emissions,reflectance,areas,form_factors):
+  #Start with the emmited light.
+  direct_radiosity=emissions.copy()
+  #Find the patch with the most emitted light.
+  light_patch=int(np.argmax(np.sum(emissions*areas[:,None],axis=1)))
+  #Make a copy of the unshot light.
+  unshot_radiosity=emission.copy()
+
+  #Send light from the light patch once.
+  shoot_patch_light(patch_index,unshot_radiosity,total_radiosity,reflectances,areas,form_factors)
+
+  #Return the direct light received by every patch.
+  return direct_radiocity
 
 #Estimates the remaining unshit light as an ambient term for displaying an unfinished solution.
 def compute_ambient_term():
