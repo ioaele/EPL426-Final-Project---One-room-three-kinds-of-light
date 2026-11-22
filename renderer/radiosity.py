@@ -387,7 +387,7 @@ def separate_direct_light(emissions,reflectance,areas,form_factors):
   unshot_radiosity=emission.copy()
 
   #Send light from the light patch once.
-  shoot_patch_light(patch_index,unshot_radiosity,total_radiosity,reflectances,areas,form_factors)
+  shoot_patch_light(light_patch,unshot_radiosity,direct_radiosity,reflectances,areas,form_factors)
 
   #Return the direct light received by every patch.
   return direct_radiocity
