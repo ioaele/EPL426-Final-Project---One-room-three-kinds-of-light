@@ -7,14 +7,14 @@ Checks triangle properties,patch creation,form factors and the radiosity solvers
 import numpy as np
 import pytest
 
-from render.radiosity import ( triangle_properties, compute_patch_properties, create patches, compute_form_factor_disc, compute_form_factor_rays, solve_radiosity_progressive, seperate_direct_light, compute_ambient_term)
+from renderer.radiosity import ( triangle_properties, compute_patch_properties, create_patches, compute_form_factor_disc, compute_form_factor_rays,solve_radiosity_full_matrix, solve_radiosity_progressive, separate_direct_light, compute_ambient_term)
 
 #Visibility function that says nothing blocks the rays.
 def no_blocker(origin,direction,max_distance):
   return False
 
 #Create a simple closed box from 12 triangles.
-def create_box_patches(patch_size=0.5)
+def create_box_patches(patch_size=0.5):
   #Box corners.
   min_corner=np.array([0.0,0.0,0.0])
   max_corner=np.array([1.0,1.0,1.0])
@@ -23,85 +23,84 @@ def create_box_patches(patch_size=0.5)
   triangles=[]
 
   #Bottom face.
-  triangles.append(np.array)[
+  triangles.append(np.array([
                    [0.0,0.0,0.0],
                    [1.0,0.0,0.0],
                    [1.0,0.0,1.0]
                    ])
   )
-  triangles.append(np.array)[
+  triangles.append(np.array([
                    [0.0,0.0,0.0],
                    [1.0,0.0,1.0],
                    [0.0,0.0,1.0]
                    ])
-  )
-
+                  )
   #Top face.
-  triangles.append(np.array)[
+  triangles.append(np.array([
                    [0.0,1.0,0.0],
                    [1.0,1.0,0.0],
                    [1.0,1.0,1.0]
                    ])
-  )
-  triangles.append(np.array)[
+                  )
+  triangles.append(np.array([
                    [0.0,1.0,0.0],
                    [1.0,1.0,1.0],
                    [0.0,1.0,1.0]
                    ])
-  )
+                  )  
   #Front face.
-  triangles.append(np.array)[
+  triangles.append(np.array([
                    [0.0,0.0,0.0],
                    [1.0,0.0,0.0],
                    [1.0,1.0,0.0]
                    ])
-  )
-  triangles.append(np.array)[
+                  )
+  triangles.append(np.array([
                    [0.0,0.0,0.0],
                    [1.0,1.0,0.0],
                    [0.0,1.0,0.0]
                    ])
-  )
+                  )
   #Back face.
-  triangles.append(np.array)[
+  triangles.append(np.array([
                    [0.0,0.0,1.0],
                    [1.0,0.0,1.0],
                    [1.0,1.0,1.0]
                    ])
-  )
-  triangles.append(np.array)[
+                  )  
+  triangles.append(np.array([
                    [0.0,0.0,1.0],
                    [1.0,1.0,1.0],
                    [0.0,1.0,1.0]
                    ])
-  )
+                  )  
   #Left face.
-  triangles.append(np.array)[
+  triangles.append(np.array([
                    [0.0,0.0,0.0],
                    [0.0,1.0,0.0],
                    [0.0,1.0,1.0]
                    ])
-  )
-  triangles.append(np.array)[
+                  )  
+  triangles.append(np.array([
                    [0.0,0.0,0.0],
                    [0.0,1.0,1.0],
                    [0.0,0.0,1.0]
                    ])
-  )
+                  )
   #Right face.
-  triangles.append(np.array)[
+  triangles.append(np.array([
                    [1.0,0.0,0.0],
                    [1.0,1.0,0.0],
                    [1.0,1.0,1.0]
                    ])
-  )
-  triangles.append(np.array)[
+                  )
+  triangles.append(np.array([
                    [1.0,0.0,0.0],
                    [1.0,1.0,1.0],
                    [1.0,0.0,1.0]
                    ])
-  )
-
+                  )
+  
   #Convert triangles to a numpy array.
   triangles=np.asarray(triangles,dtype=np.float64)
   
@@ -124,7 +123,7 @@ def test_triangle_properties():
     [0.0,1.0,0.0]
   ])
   #Calculate the properties.
-  centre,area,normal=trianlge_properties(vertices)
+  centre,area,normal=triangle_properties(vertices)
   #Check the centre.
   assert np.allclose(centre,[1/3,1/3,0.0])
   #Check the area.
@@ -137,18 +136,18 @@ def test_triangle_properties():
 #Tests that large triangles are splits into smaller patches.
 def test_create_patches():
   #Create one large triangle.
-  triangles=np.array([
+  triangles=np.array([[
     [0.0,0.0,0.0],
     [2.0,0.0,0.0],
     [0.0,2.0,0.0]
-  ])
+  ]])
 
   #Give it one material and make it a patch.
   material_ids=np.array([0])
   patch_mask=np.array([True])
 
   #Split in into patches.
-  patch_vertices,patch_material_ids,source_triangles_ids=create_patches(
+  patch_vertices,patch_material_ids,source_triangle_ids=create_patches(
     triangles,
     material_ids,
     patch_mask,
@@ -159,8 +158,8 @@ def test_create_patches():
   assert len(patch_vertices)>1
   #Every patch must keep the same material ID.
   assert np.all(patch_material_ids==0)
-  #Every patch must keep the same material ID.
-  assert np.all(patch_triangle_ids==0)
+  #Every patch must come from the same source triangle.
+  assert np.all(source_triangle_ids==0)
 
   #No patch edge can be longer than the patch size.
   for patch in patch_vertices:
@@ -180,7 +179,7 @@ def test_form_factor_disc_bounds():
 
   #Check every pair of patches.
   for i in range(len(centres)):
-    for j in range (len(centres)):
+    for j in range(len(centres)):
       #A patch does not send light to itself.
       if i==j:
         continue
@@ -231,3 +230,7 @@ def test_full_vs_progressive():
 
   #In this case the radiosity must be around 2.
   assert np.allclose(full_radiosity,2.0,atol=0.05)
+
+#Test the furnace scene.
+def test_furnace():
+  
