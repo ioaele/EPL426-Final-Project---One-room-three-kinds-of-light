@@ -171,6 +171,25 @@ def test_create_patches():
     ])
     assert np.max(edge_lengths)<=0.5+1e-9
 
+#Tests that the disc form factors are valid.
+def test_form_factor_disc_bounds():
+  #Create a small closed box.
+  patch_vertices,_,_=create_box_patches(patch_size=0.5)
+  #Calculate the patch properties.
+  centres,areas,normals=compute_patch_properties(patch_vertices)
 
-    
-  
+  #Check every pair of patches.
+  for i in range(len(centres)):
+    for j in range (len(centres)):
+      #A patch does not send light to itself.
+      if i==j:
+        continue
+      #Calculate the form factor.
+      form_factor=compute_form_factor_disc(
+        centres[i],normals[i],areas[i],
+        centres[j],normals[j],areas[j],
+        no_blocker
+      )
+      #The form factor must be valid.
+      assert form_factor>=0.0
+      assert form_factor<=1.0
