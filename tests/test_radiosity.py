@@ -193,3 +193,41 @@ def test_form_factor_disc_bounds():
       #The form factor must be valid.
       assert form_factor>=0.0
       assert form_factor<=1.0
+
+#Tests that the full matrix and progressive solver agree.
+def test_full_vs_progressive():
+  #Create 4 patches.
+  patch_count=4
+  #Every patch emits light.
+  emissions=np.ones((patch_count,3))
+  #Every patch reflects half of the incoming light.
+  reflectances=np.full((patch_count,3),0.5)
+  #Give every patch the same area.
+  areas=np.ones(patch_count)
+  #Create form factors where every row adds up to 1.
+  form_factors=np.full((patch_count,patch_count),1.0/(patch_count-1))
+  #Remove the diagonal values.
+  np.fill_diagonal(form_factors,0.0)
+
+  #Solve with the full matrix.
+  full_radiosity=solve_radiosity_full_matrix(
+    emissions,
+    reflectances,
+    form_factors
+  )
+
+  #Solve with the progressivr refinement.
+  progressive_radiosity=solve_radiosity_progressive(
+    emissions,
+    reflectances,
+    areas,
+    form_factors,
+    tolerance=1e-6,
+    max_shots=1000
+  )
+
+  #The two solvers must give the same result or a close result.
+  assert np.allclose(full_radiosity,progressive_radiosity,atol=1e-3)
+
+  #In this case the radiosity must be around 2.
+  assert np.allclose(full_radiosity,2.0,atol=0.05)
