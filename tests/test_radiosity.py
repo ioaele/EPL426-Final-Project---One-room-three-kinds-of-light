@@ -114,3 +114,63 @@ def create_box_patches(patch_size=0.5)
 
   #Return the patch data.
   return patch_vertices,patch_material_ids,source_triangle_ids
+
+#Tests that the triangle properties are correct.
+def test_triangle_properties():
+  #Create a triangle.
+  vertices=np.array([
+    [0.0,0.0,0.0],
+    [1.0,0.0,0.0],
+    [0.0,1.0,0.0]
+  ])
+  #Calculate the properties.
+  centre,area,normal=trianlge_properties(vertices)
+  #Check the centre.
+  assert np.allclose(centre,[1/3,1/3,0.0])
+  #Check the area.
+  assert np.isclose(area,0.5)
+  #Ckeck that the normal is unit length.
+  assert np.isclose(np.linalg.norm(normal),1.0)
+  #Check that the normal points in the z direction.
+  assert np.allclose(normal,[0.0,0.0,1.0])
+
+#Tests that large triangles are splits into smaller patches.
+def test_create_patches():
+  #Create one large triangle.
+  triangles=np.array([
+    [0.0,0.0,0.0],
+    [2.0,0.0,0.0],
+    [0.0,2.0,0.0]
+  ])
+
+  #Give it one material and make it a patch.
+  material_ids=np.array([0])
+  patch_mask=np.array([True])
+
+  #Split in into patches.
+  patch_vertices,patch_material_ids,source_triangles_ids=create_patches(
+    triangles,
+    material_ids,
+    patch_mask,
+    patch_size=0.5
+  )
+
+  #The large triangle must be split.
+  assert len(patch_vertices)>1
+  #Every patch must keep the same material ID.
+  assert np.all(patch_material_ids==0)
+  #Every patch must keep the same material ID.
+  assert np.all(patch_triangle_ids==0)
+
+  #No patch edge can be longer than the patch size.
+  for patch in patch_vertices:
+    edge_lengths=np.array([
+      np.linalg.norm(patch[1]-patch[0]),
+      np.linalg.norm(patch[2]-patch[1]),
+      np.linalg.norm(patch[0]-patch[2]),
+    ])
+    assert np.max(edge_lengths)<=0.5+1e-9
+
+
+    
+  
