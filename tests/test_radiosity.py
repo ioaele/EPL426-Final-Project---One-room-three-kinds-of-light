@@ -233,4 +233,41 @@ def test_full_vs_progressive():
 
 #Test the furnace scene.
 def test_furnace():
+  #Create a closed box with small patches.
+  patch_vertices, _, _ = create_box_patches(patch_size=0.25)
+  #Calculate the patch properties.
+  centres,areas,normals=compute_patch_properties(patch_vertices)
+  #Number of patches.
+  patch_count=len(centres)
+
+  #Every patch emits light.
+  emissions=np.ones((patch_count,3))
+  #Every patch reflects half of the incoming light.
+  reflectances=np.full((patch_count,3),0.5)
+
+  #Create the form-factor matrix using the disc method.
+  form_factors=np.zeros((patch_count,patch_count))
+
+  #Calculate the form factors.
+  for i in range(patch_count):
+    for j in range(patch_count):
+      #A patch doesn't send light to itself.
+      if i==j:
+        continue
+      form_factors[i,j]=compute_form_factor_disc(centres[i], normals[i], areas[i], centres[j], normals[j], areas[j], no_blocker)
+
+  #Check that the form factors add up to 1 or close to 1.
+  row_sums=np.sum(form_factors,axis=1)
+
+  assert np.all(row_sums>0.5)
+  assert np.all(row_sums<1.5)
+
+  #Solve radiosity with the full matrix.
+  radiosity=solve_radiosity_full_matrix(emissions, reflectances, form_factors)
+
+  #Count patches close to 2.
+  close_to_two=np.sum(np.all(np.abs(radiosity-2.0)<=0.1,axis=1))
+
+  #At least 0.8 of the patches are close to 2.
+  assert close_to_two>=0.8*patch_count  
   
