@@ -103,7 +103,10 @@ def create_box_patches(patch_size=0.5):
   
   #Convert triangles to a numpy array.
   triangles=np.asarray(triangles,dtype=np.float64)
-  
+
+  #Point all box normals inward.
+  flip_ids=[0, 1, 6, 7, 8, 9]
+  triangles[flip_ids]=triangles[flip_ids][:, [0, 2, 1], :]
   #Every triangle is diffuse and turn into patches.
   material_ids=np.zeros(len(triangles),dtype=np.int64)
   patch_mask=np.ones(len(triangles),dtype=bool)
@@ -208,28 +211,22 @@ def test_full_vs_progressive():
   #Remove the diagonal values.
   np.fill_diagonal(form_factors,0.0)
 
+#Return one row from the test matrix.
+def compute_form_factor_row(patch_index):
+  return form_factors[patch_index]
   #Solve with the full matrix.
-  full_radiosity=solve_radiosity_full_matrix(
-    emissions,
-    reflectances,
-    form_factors
-  )
+  full_radiosity=solve_radiosity_full_matrix(emissions,reflectances,areas,form_factors)
 
-  #Solve with the progressivr refinement.
-  progressive_radiosity=solve_radiosity_progressive(
-    emissions,
-    reflectances,
-    areas,
-    form_factors,
-    tolerance=1e-6,
-    max_shots=1000
-  )
+  #Solve with the progressive refinement.
+  progressive_radiosity=solve_radiosity_progressive(emissions,reflectances,areas,compute_form_factor_row,tolerance=1e-6,max_shots=1000)
 
   #The two solvers must give the same result or a close result.
-  assert np.allclose(full_radiosity,progressive_radiosity,atol=1e-3)
+  assert np.allclose(full_radiosity,progressive_radiosity,atol=1e-3,rtol=0.0)
 
   #In this case the radiosity must be around 2.
-  assert np.allclose(full_radiosity,2.0,atol=0.05)
+  assert np.allclose(full_radiosity,2.0,atol=0.05,rtol=0.0)
+
+
 
 #Test the furnace scene.
 def test_furnace():
@@ -263,7 +260,7 @@ def test_furnace():
   assert np.all(row_sums<1.5)
 
   #Solve radiosity with the full matrix.
-  radiosity=solve_radiosity_full_matrix(emissions, reflectances, form_factors)
+  radiosity=solve_radiosity_full_matrix(emissions, reflectances,areas, form_factors)
 
   #Count patches close to 2.
   close_to_two=np.sum(np.all(np.abs(radiosity-2.0)<=0.1,axis=1))
