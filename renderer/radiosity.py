@@ -144,10 +144,23 @@ def compute_visibility(centre_i,normal_i,centre_j,normal_j,any_hit):
   if np.dot(normal_j,-direction)<=0.0:
     return False
     
-  #Start a bit above i to avoid hitting itself.
-  start=centre_i+1e-4*normal_i
-  #Check if something blocks the ray.
-  blocked=any_hit(start,direction,distance-2e-4)
+  #Offset both ends to avoid surface intersections.
+  epsilon=1e-4
+  start=centre_i+epsilon*normal_i
+  end=centre_j+epsilon*normal_j
+
+  #Recalculate the shadow-ray segment.
+  direction=end-start
+  distance=np.linalg.norm(direction)
+
+  if distance<=epsilon:
+      return False
+
+  direction=direction/distance
+
+  #Check for a blocker before the endpoint.
+  blocked=any_hit(start, direction, distance-epsilon)    
+
   
   #The patched are visible.
   return not blocked
@@ -177,16 +190,16 @@ def compute_form_factor_disc(centre_i,normal_i,area_i,centre_j,normal_j,area_j,a
   if not compute_visibility(centre_i,normal_i,centre_j,normal_j,any_hit):
     return 0.0
   #Small-disc from factor formula.
-  form_factor=area_j*cos_i*cos_j/(np.pi*distance*distance)
+  form_factor=(area_j*cos_i*cos_j/(np.pi * distance*distance+area_j))
 
   #A form factor can't be larger than 1.
-  return min(form_factor,1.0)
+  return form_factor
   
 
 #Estimates how much light reaches each patch by shooting random rays from source patch.
-def compute_form_factor_rays(patch_index,patch_vertices,centres,normals,areas,ray_count,any_hit,seed=0):
+def compute_form_factor_rays(patch_index,patch_vertices,normals,ray_count,nearest_hit,triangle_to_patch,seed=0,epsilon=1e-4):
   #Number of patches.
-  patch_count=len(centres)
+  patch_count=len(patch_vertices)
 
   #Start with zero form factors.
   form_factors=np.zeros(patch_count,dtype=np.float64)
@@ -196,12 +209,14 @@ def compute_form_factor_rays(patch_index,patch_vertices,centres,normals,areas,ra
 
   #Get the source patch.
   triangle=patch_vertices[patch_index]
-  normal=normals[patch_index]
+  normal = np.asarray(normals[patch_index], dtype=np.float64)
+  normal = normal / np.linalg.norm(normal)
 
   #Two edges of the source patch.
   edge1=triangle[1]-triangle[0]
   edge2=triangle[2]-triangle[0]
 
+  #Build a local coordinate system.
   #First direction in the patch plane.
   u=edge1/np.linalg.norm(edge1)
   #Second direction in the patch plane.
@@ -212,8 +227,8 @@ def compute_form_factor_rays(patch_index,patch_vertices,centres,normals,areas,ra
   rng=np.random.default_rng(seed)
 
   #Shoot rays from random points on the source patch.
-  for ray_index in range(ray_count):
-    #Random barycentric coordinates.
+  for _ in range(ray_count):
+    #Sample a point uniformly on the triangle.
     r1=rng.random()
     r2=rng.random()
     #Keep the point inside the triangle.
@@ -223,7 +238,7 @@ def compute_form_factor_rays(patch_index,patch_vertices,centres,normals,areas,ra
     #Random point on the source patch.
     point=triangle[0]+r1*edge1+r2*edge2
     #Random direction in the upper hemisphere.
-    cos_theta=rng.random()
+    cos_theta=np.sqrt(rng.random())
     sin_theta=np.sqrt(max(0.0,1.0-cos_theta*cos_theta))
     phi=2.0*np.pi*rng.random()
 
@@ -233,36 +248,36 @@ def compute_form_factor_rays(patch_index,patch_vertices,centres,normals,areas,ra
     #Make the direction unit length.
     direction=direction/np.linalg.norm(direction)
 
-    #Find the closest patch hit by this ray.
-    hit_index=-1
-    hit_distance=np.inf
+    #Avoid hitting the source surface.
+    start = point + epsilon * normal
 
-    #Test the ray against every patch.
-    for other_index in range(patch_count):
-        #Don't test the source patch with itself.
-        if other_index==patch_index:
-             continue
-        #Find where the ray hits this patch.
-        hit=ray_triangle_intersect(point,direction,patch_vertices[other_index])
-        #Keep the closest hit.
-        if hit is not None and hit<hit_distance:
-            hit_distance=hit
-            hit_index=other_index
-    #Ignore rays that dont hit another patch.
-    if hit_index==-1:
+    #The adapter must return IDs in the original triangle order.
+    hit, _, triangle_id=nearest_hit(start,direction,0.0,np.inf)
+
+    if not hit:
       continue
-    #Start slightly above the patch to avoid self intersection.
-    start=point+1e-4*normal
-    #Check whether something blocks the ray.
-    blocked=any_hit(start,direction,max(0.0,hit_distance-2e-4))
-    #Count only visible hits.
-    if not blocked:
-      form_factors[hit_index]+=1.0
-  #Turn hit counts into form factors.
-  form_factors=form_factors/ray_count
-  
-  #Return the form factors from thuis patch.
-  return form_factors
+
+    if triangle_id < 0 or triangle_id >= len(triangle_to_patch):
+      raise ValueError("Invalid triangle ID returned by nearest_hit")
+    # A value of -1 marks a non-patch blocker.
+    hit_index = int(triangle_to_patch[triangle_id])
+
+    if hit_index == -1:
+      continue
+    if hit_index < 0 or hit_index >= patch_count:
+      raise ValueError("Invalid patch ID in triangle_to_patch")
+    if hit_index == patch_index:
+       continue
+    # Count only front-facing receivers.
+    if np.dot(normals[hit_index], -direction) <= 0.0:
+        continue
+
+    form_factors[hit_index] += 1.0
+
+  return form_factors / ray_count    
+
+'''
+To check if still is needed
 
 #Finds the distance where a ray hits a triangle.
 def ray_triangle_intersect(origin,direction,vertices):
@@ -305,9 +320,10 @@ def ray_triangle_intersect(origin,direction,vertices):
 
   #Return the positive hit distance.
   return t
-
+'''
 #Calculate the light leaving each patch by repeatedly updating the solution using the full form-factor matrix.
-def solve_radiosity_full_matrix(emissions,reflectances,form_factors,iterations=100,tolerance=1e-4):
+def solve_radiosity_full_matrix(emissions,reflectances,areas,form_factors,iterations=100,tolerance=1e-4):
+
   #Number of patches.
   patch_count=len(emissions)
   #Start with only emitted light.
@@ -316,7 +332,7 @@ def solve_radiosity_full_matrix(emissions,reflectances,form_factors,iterations=1
   #repeat the radiosity equatoin.
   for iteration in range(iterations):
     #Calculate incoming light for every patch.
-    incoming=form_factors@radiosity
+    incoming=(form_factors.T @ (radiosity * areas[:, None])) / areas[:, None]
     #Add emitted light and reflected incoming light.
     new_radiosity=emissions+reflectances*incoming
     #Find the largest change from the last step
@@ -331,9 +347,9 @@ def solve_radiosity_full_matrix(emissions,reflectances,form_factors,iterations=1
   return radiosity
 
 #Sends a patch's unshot light to the other patches and updates their total and unsot light.
-def shoot_patch_light(patch_index,unshot_radiosity,total_radiosity,reflectances,areas,form_factors):
+def shoot_patch_light(patch_index,unshot_radiosity,total_radiosity,reflectances,areas,form_factors_row):
   #Light that this pach still needs to send.
-  sent_light=unshot_radiosity[patch_index]
+  sent_light=unshot_radiosity[patch_index].copy()
   #If there isn't any unshot light.
   if np.all(sent_light<=0.0):
     return
@@ -345,7 +361,7 @@ def shoot_patch_light(patch_index,unshot_radiosity,total_radiosity,reflectances,
     #Area ratio from the shooting patch to the receiving patch.
     area_ratio=areas[patch_index]/areas[other_index]
     #Light received by the other patch.
-    received_light=(reflectances[other_index]*form_factors[patch_index,other_index]*area_ratio*sent_light)
+    received_light=(reflectances[other_index]*form_factors_row[other_index]*area_ratio*sent_light)
     #Add the received light to the other patch.
     total_radiosity[other_index]+=received_light
     #Keep the received light ready to be sent.
@@ -354,7 +370,7 @@ def shoot_patch_light(patch_index,unshot_radiosity,total_radiosity,reflectances,
   unshot_radiosity[patch_index]=0.0
 
 #Calculates radiosity by repeatedly choosing a patch and sending it's unshot light to the others.
-def solve_radiosity_progressive(emissions,reflectances,areas,form_factors,tolerance=0.01,max_shots=1000):
+def solve_radiosity_progressive(emissions,reflectances,areas,compute_form_factor_row,tolerance=0.01,max_shots=1000):
   #Start with only emitted light.
   total_radiosity=emissions.copy()
   #Light that has not been sent yet.
@@ -364,30 +380,42 @@ def solve_radiosity_progressive(emissions,reflectances,areas,form_factors,tolera
 
   #Repeat until little light is still unshot.
   for shot in range(max_shots):
-    #Find the patch that has the most unsot light.
-    patch_index=int(np.argmax(np.sum(unshot_radiosity*areas[:,None],axis=1)))
     #Remaining light that still waits to be sent.
     remaining=np.sum(unshot_radiosity*areas[:,None],axis=0)
     #Break when no light is left or less than the tolerance.
     if np.all(remaining<=tolerance*total_emission):
       break
+
+    #Find the patch that has the most unsot light.
+    patch_index=int(np.argmax(np.sum(unshot_radiosity*areas[:,None],axis=1)))
+    #Calculate only this patch's form factor row.
+    form_factor_row=compute_form_factor_row(patch_index)
     #Send light from the chosen patch.
-    shoot_patch_light(patch_index,unshot_radiosity,total_radiosity,reflectances,areas,form_factors)
+    shoot_patch_light(patch_index,unshot_radiosity,total_radiosity,reflectances,areas,form_factor_row)
 
   #Return the final radiosity values.
   return total_radiosity
 
 #Saves the direct-light contribution seperately before light starts bouncing between diffuse surfaces.
-def separate_direct_light(emissions,reflectances,areas,form_factors):
+def separate_direct_light(emissions,reflectances,areas,compute_form_factor_row):
   #Start with the emmited light.
   direct_radiosity=emissions.copy()
-  #Find the patch with the most emitted light.
-  light_patch=int(np.argmax(np.sum(emissions*areas[:,None],axis=1)))
+
   #Make a copy of the unshot light.
   unshot_radiosity=emissions.copy()
 
-  #Send light from the light patch once.
-  shoot_patch_light(light_patch,unshot_radiosity,direct_radiosity,reflectances,areas,form_factors)
+  #Send the original emission from every light patch.
+  for light_patch in range(len(emissions)):
+    #Skip patches tha don't emit light.
+    if np.all(emissions[light_patch]<=0.0):
+      continue
+    #Send only emission, not previously received light.
+    unshot_radiosity[light_patch]=emissions[light_patch].copy()
+
+    #Calculate this light patch's form-factor row.
+    form_factor_row = compute_form_factor_row(light_patch)
+    #Send light from the light patch once.
+    shoot_patch_light(light_patch,unshot_radiosity,direct_radiosity,reflectances,areas,form_factor_row)
 
   #Return the direct light received by every patch.
   return direct_radiosity
@@ -396,18 +424,22 @@ def separate_direct_light(emissions,reflectances,areas,form_factors):
 def compute_ambient_term(unshot_radiosity,reflectances,areas):
   #Total patch area.
   total_area=np.sum(areas)
-  #Area weighted average reflectance.
-  average_reflectance=np.sum(reflectances*areas)/total_area
 
   #Avoid division by zero.
-  if average_reflectance>=1.0:
-    return np.zeros(3)
-    
+  if total_area <= 0.0:
+    return np.zeros_like(unshot_radiosity)
+
+  #Area-weighted average reflectance per colour channel.
+  average_reflectance = np.sum(reflectances*areas[:, None], axis=0)/total_area
+
+  #The estimate needs average reflectance below 1.
+  if np.any(average_reflectance >= 1.0):
+    raise ValueError("Average reflectance must be below 1")    
   #Total unshot light per color channel.
   remaining_light=np.sum(unshot_radiosity*areas[:,None],axis=0)/total_area
 
   #Formula for ambient light.
-  ambient=(remaining_light*average_reflectance/(1.0-average_reflectance))
+  ambient=(remaining_light*reflectances/(1.0-average_reflectance))
 
   #Return the ambient light color.
   return ambient
