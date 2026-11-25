@@ -252,7 +252,7 @@ def compute_form_factor_rays(patch_index,patch_vertices,normals,ray_count,neares
     start = point + epsilon * normal
 
     #The adapter must return IDs in the original triangle order.
-    hit, _, triangle_id=nearest_hit(start,direction,0.0,np.inf)
+    hit, distance, triangle_id=nearest_hit(start,direction,0.0,np.inf)
 
     if not hit:
       continue
