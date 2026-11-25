@@ -449,7 +449,9 @@ def compute_patch_vertex_radiosity(patch_vertices,radiosity,patch_material_ids,d
   #Number of patches.
   patch_count=len(patch_vertices)
   #Calculate patch normals.
-  centres,area,normals=compute_patch_properties(patch_vertices)
+  centres,areas,normals=compute_patch_properties(patch_vertices)
+  #Store RGB value for each corner.
+  vertex_radiosity=np.zeros((patch_count,3,3))
   #Store patches that share each vertex.
   shared_vertices={}
 
@@ -463,11 +465,9 @@ def compute_patch_vertex_radiosity(patch_vertices,radiosity,patch_material_ids,d
 
       shared_vertices[key].append(patch_index)
 
-    #Store RGB value for each corner.
-    vertex_radiosity=np.zeros((patch_count,3,3))
-    for patch_index in range(patch_count):
-      for corner_index in range(3):
-        key=tuple(np.round(patch_vertices[patch_index,corner_index],decimals))
+  for patch_index in range(patch_count):
+    for corner_index in range(3):
+      key=tuple(np.round(patch_vertices[patch_index,corner_index],decimals))
 
       total=np.zeros(3)
       count=0
@@ -528,7 +528,7 @@ def subdivide_patches(patch_vertices,patch_material_ids,source_triangle_ids,spli
       ]
     else:
       #Keep this patch unchanged.
-      children=[triangles.copy()]
+      children=[triangle.copy()]
 
     for child in children:
       #Store the geometry.
@@ -539,17 +539,28 @@ def subdivide_patches(patch_vertices,patch_material_ids,source_triangle_ids,spli
       #Remember the parent patch.
       parent_patch_ids.append(patch_index)
 
-#Return the new patches and their IDs.
-return(np.asarray(new_vertices,dtype=np.float64).reshape(-1,3,3),np.asarray(new_material_ids,dtype=np.int64),np.asarray(new_source_ids,dtype=np.int64),np.asarray(parent_patch_ids,dtype=np.int64))
+  #Return the new patches and their IDs.
+  return(np.asarray(new_vertices,dtype=np.float64).reshape(-1,3,3),np.asarray(new_material_ids,dtype=np.int64),np.asarray(new_source_ids,dtype=np.int64),np.asarray(parent_patch_ids,dtype=np.int64))
 
+# Displays radiosity using the rasteriser.
+def render_radiosity(patch_vertices,radiosity,patch_material_ids,camera,rasterize_colours,flat=False,ambient=None):
+  #Keep the solved radiosity unchanged.
+  display_radiosity=radiosity.copy()
 
+  #Add ambient only for display.
+  if ambient is not None:
+    display_radiosity+=ambient
 
+  if flat:
+    #Give all corners tha same patch color.
+    corner_colours=np.repeat(display_radiosity[:,None,:],3,axis=1)
+  else:
+    #Calculate a color for each corner.
+    corner_colours=compute_patch_vertex_radiosity(patch_vertices,display_radiosity,patch_material_ids)
 
+  #Draw the patches without extra lighting.
+  image=rasterize_colours(patch_vertices,corner_colours,camera)
 
+  #Return the renderer image.
+  return image
 
-
-
-
-
-
-  
