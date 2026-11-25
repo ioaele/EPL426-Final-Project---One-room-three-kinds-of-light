@@ -443,3 +443,54 @@ def compute_ambient_term(unshot_radiosity,reflectances,areas):
 
   #Return the ambient light color.
   return ambient
+
+#Calculate radiosity at each patch corner.
+def compute_patch_vertex_radiosity(patch_vertices,radiosity,patch_material_ids,decimals=7,normal_threshold=0.9999):
+  #Number of patches.
+  patch_count=len(patch_vertices)
+  #Calculate patch normals.
+  centres,area,normals=compute_patch_properties(patch_vertices)
+  #Store patches that share each vertex.
+  shared_vertices={}
+
+  for patch_index in range(patch_count):
+    for corner_index in range(3):
+      #Use the coordinates as key.
+      key=tuple(np.round(patch_vertices[patch_index,corner_index],decimals))
+      
+      if key not in shared_vertices:
+        shared_vertices[key]=[]
+
+      shared_vertices[key].append(patch_index)
+
+    #Store RGB value for each corner.
+    vertex_radiosity=np.zeros((patch_count,3,3))
+    for patch_index in range(patch_count):
+      for corner_index in range(3):
+        key=tuple(np.round(patch_vertices[patch_index,corner_index],decimals))
+
+      total=np.zeros(3)
+      count=0
+
+      for other_index in shared_vertices[key]:
+        #Keep different materials separate.
+        if patch_material_ids[other_index]!=patch_material_ids[patch_index]:
+          continue
+        #Keep sharp corners separate.
+        alignment=np.dot(normals[patch_index],normals[other_index])
+        if alignment<normal_threshold:
+          continue
+        #Add the neighbouring patch's radiosity.
+        total+=radiosity[other_index]
+        count+=1
+
+      #Average the contributing patches.
+      if count>0:
+        vertex_radiosity[patch_index,corner_index]=total/count
+      else:
+        vertex_radiosity[patch_index,corner_index]=radiosity[patch_index]
+
+  # Return RGB radiosity at each corner.
+  return vertex_radiosity
+        
+
