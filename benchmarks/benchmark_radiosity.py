@@ -106,4 +106,38 @@ def create_box_triangles():
 
   #Return the triangles.
   return triangles
-  
+
+#Calculates the form-factor matrix using the disc method.
+def calculate_disc_form_factors(patch_vertices,centres,areas,normals):
+  #Number of patches.
+  patch_count=len(centres)
+
+  #Start with zero form factors.
+  form_factors=np.zeros((patch_count,patch_count))
+
+  #Calculate every pair of patches.
+  for i in range(patch_count):
+    for j in range(patch_count):
+      #A patch does not send light to itself.
+      if i==j:
+        continue
+
+      form_factors[i,j]=compute_form_factor_disc(centres[i],normals[i],areas[i],centres[j],normals[j],areas[j],no_blocker)
+      
+  #Return the form-factor matrix.
+  return form_factors
+
+#Calculates the form-factor matrix using ray shooting.
+def calculate_disc_form_factors(patch_vertices,normals,ray_count,nearest_hit,triangle_to_patch):
+  #Number of patches.
+  patch_count=len(patch_vertices)
+
+  #Start with zero form factors.
+  form_factors=np.zeros((patch_count,patch_count))
+
+  #Shoot rays from every patch.
+  for i in range(patch_count):
+    form_factors[i]=compute_form_factor_rays(i,patch_vertices,normals,ray_count,nearest_hit,triangle_to_patch,seed=i)
+
+  #Return the form-factor matrix.
+  return form_factors
