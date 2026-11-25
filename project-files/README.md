@@ -164,6 +164,9 @@ My module calculates the light that bounces between diffuse surfaces in the scen
 - solve_radiosity_progressive(): repeatedly chooses the patch with the most unshot light ans sends the patches light to the others.
 - seperate_direct_light(): Saves the light received directly from the light panel before the diffuse bounces start.
 - compute_ambient_term(): Estimates the light that is still unshot and adds it as an ambient term for an unfinished solution.
+- subdivide_patches(): Splits selected patches into four smaller triangles.
+- compute_patch_vertex_radiosity(): Calculate radiosity at each patch corner.
+- render_radiosity(): Displays radiosity using the rasteriser.
 
 **Tests**
 Run them with: *py -m pytest tests/test_radiosity.py -v*
