@@ -494,3 +494,62 @@ def compute_patch_vertex_radiosity(patch_vertices,radiosity,patch_material_ids,d
   return vertex_radiosity
         
 
+#Splits selected patches into 4 smaller triangles.
+def subdivide_patches(patch_vertices,patch_material_ids,source_triangle_ids,split_mask):
+  #Convert the mask to a boolean array.
+  split_mask=np.asarray(split_mask,dtype=bool)
+  #Check that each patch has a mask value.
+  if split_mask.shape!=(len(patch_vertices)):
+    raise ValueError("split_mask should have one value per patch")
+
+  #Store the new patches and their IDs.
+  new_vertices=[]
+  new_material_ids=[]
+  new_source_ids=[]
+  parent_patch_ids=[]
+
+  for patch_index in range(len(patch_vertices)):
+    #Get the current patch.
+    triangle=patch_vertices[patch_index]
+
+    if split_mask[patch_index]:
+      #Get the 3 corners.
+      v0,v1,v2=triangle
+      #Calculate the edge midpoints.
+      m01=(v0+v1)/2.0
+      m12=(v1+v2)/2.0
+      m20=(v2+v0)/2.0
+      #Create 4 triangles with the same normal direction.
+      children=[
+        np.array([v0,m01,m20]),
+        np.array([m01,v1,m12]),
+        np.array([m20,m12,v2]),
+        np.array([m01,m12,m20]),
+      ]
+    else:
+      #Keep this patch unchanged.
+      children=[triangles.copy()]
+
+    for child in children:
+      #Store the geometry.
+      new_vertices.append(child)
+      #Keep the original material and source triangle.
+      new_material_ids.append(patch_material_ids[patch_index])
+      new_source_ids.append(source_triangle_ids[patch_index])
+      #Remember the parent patch.
+      parent_patch_ids.append(patch_index)
+
+#Return the new patches and their IDs.
+return(np.asarray(new_vertices,dtype=np.float64).reshape(-1,3,3),np.asarray(new_material_ids,dtype=np.int64),np.asarray(new_source_ids,dtype=np.int64),np.asarray(parent_patch_ids,dtype=np.int64))
+
+
+
+
+
+
+
+
+
+
+
+  
