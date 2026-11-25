@@ -176,7 +176,8 @@ def test_create_patches():
 #Tests that the disc form factors are valid.
 def test_form_factor_disc_bounds():
   #Create a small closed box.
-  patch_vertices,_,_=create_box_patches(patch_size=0.5)
+  box_patches=create_box_patches(patch_size=0.5)
+  patch_vertices=box_patches[0]
   #Calculate the patch properties.
   centres,areas,normals=compute_patch_properties(patch_vertices)
 
@@ -294,7 +295,8 @@ def test_compute_ambient_term():
 #Test the furnace scene.
 def test_furnace():
   #Create a closed box with small patches.
-  patch_vertices, _, _ = create_box_patches(patch_size=0.25)
+  box_patches=create_box_patches(patch_size=0.25)
+  patch_vertices=box_patches[0]
   #Calculate the patch properties.
   centres,areas,normals=compute_patch_properties(patch_vertices)
   #Number of patches.
