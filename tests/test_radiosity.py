@@ -211,9 +211,9 @@ def test_full_vs_progressive():
   #Remove the diagonal values.
   np.fill_diagonal(form_factors,0.0)
 
-#Return one row from the test matrix.
-def compute_form_factor_row(patch_index):
-  return form_factors[patch_index]
+  #Return one row from the test matrix.
+  def compute_form_factor_row(patch_index):
+    return form_factors[patch_index]
   #Solve with the full matrix.
   full_radiosity=solve_radiosity_full_matrix(emissions,reflectances,areas,form_factors)
 
@@ -226,7 +226,70 @@ def compute_form_factor_row(patch_index):
   #In this case the radiosity must be around 2.
   assert np.allclose(full_radiosity,2.0,atol=0.05,rtol=0.0)
 
+#Tests that direct light is saved without extra bounces.
+def test_separate_direct_light():
+  #Create two light patches.
+  emissions=np.array([
+    [1.0,1.0,1.0],
+    [2.0,2.0,2.0]
+  ])
 
+  #Each patch reflects half the light.
+  reflectances=np.full((2,3),0.5)
+
+  #Give both patches the same area.
+  areas=np.ones(2)
+
+  #Each patch sends all its light to the other.
+  form_factors=np.array([
+    [0.0,1.0],
+    [1.0,0.0]
+  ])
+
+  #Return one form-factor row.
+  def compute_form_factor_row(patch_index):
+    return form_factors[patch_index]
+
+  #Calculate direct light.
+  direct_radiosity=separate_direct_light(emissions,reflectances,areas,compute_form_factor_row)
+
+  #Expected emission and direct reflection.
+  expected=np.array([
+    [2.0,2.0,2.0],
+    [2.5,2.5,2.5]
+  ])
+
+  #Check the result.
+  assert np.allclose(direct_radiosity,expected)
+
+#Tests the ambient light for each patch.
+def test_compute_ambient_term():
+  #Give both patches unshot light.
+  unshot_radiosity=np.ones((2,3))
+
+  #Give each patch a different reflectance.
+  reflectances=np.array([
+    [0.2,0.2,0.2],
+    [0.6,0.6,0.6]
+  ])
+
+  #Give each patch a different area.
+  areas=np.array([1.0,3.0])
+
+  #Calculate the ambient light.
+  ambient=compute_ambient_term(unshot_radiosity,reflectances,areas)
+
+  #Expected ambient light for each patch.
+  expected=np.array([
+    [0.4,0.4,0.4],
+    [1.2,1.2,1.2]
+  ])
+
+  # Check that each patch has three colour values.
+  assert ambient.shape==(2,3)
+
+  # Check the ambient light values.
+  assert np.allclose(ambient,expected)
 
 #Test the furnace scene.
 def test_furnace():
