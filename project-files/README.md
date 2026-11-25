@@ -52,7 +52,8 @@ EPL426 — Computer Graphics
 │   ├── intersections.py       # (Eleni) ray-triangle, ray-box, brute-force nearest/any hit
 │   ├── bvh_median.py          # (Eleni) BVH build, median split
 │   ├── bvh_sah.py             # (Eleni) BVH build, surface area heuristic
-│   └── bvh_walk.py            # (Eleni) BVH walk: nearest hit, any hit
+│   ├──  bvh_walk.py            # (Eleni) BVH walk: nearest hit, any hit
+│   └── radiosity.py            # (Katerina) splits surfaces into patches,calculates light transfer between them,finds their final colours.
 │
 ├── tools/
 │   └── generate_terrain.py    # (Eleni) diamond-square terrain -> scenes/terrain.obj
@@ -60,7 +61,8 @@ EPL426 — Computer Graphics
 ├── tests/
 │   ├── test_intersections.py  # (Eleni) ray-triangle, ray-box and brute-force tests
 │   ├── test_bvh.py            # (Eleni) BVH against brute force (median and SAH)
-│   └── test_terrain.py        # (Eleni) terrain level 8 BVH builds in < 1 minute
+│   ├──  test_terrain.py        # (Eleni) terrain level 8 BVH builds in < 1 minute
+│   └── test_radiosity.py        # (Katerina) checks that the radiosity functions are calculated correctly.
 │
 ├── pytest.ini                 # (Eleni) pytest settings
 │
