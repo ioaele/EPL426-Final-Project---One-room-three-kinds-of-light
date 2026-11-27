@@ -70,31 +70,9 @@ def test_sah_triangles_at_the_same_spot():
     assert count[0]==10
 
 
-#TESTING bvh_nearest_hit and bvh_any_hit against brute force
-#for many random rays the BVH must give exactly the same answer as brute force
-def test_nearest_hit_same_as_brute_force():
-    v0,v1,v2=random_triangles(1000)
-    for build in BUILDS:
-        tree=build(v0,v1,v2)
-        random=np.random.default_rng(1)
-        for i in range(1000):
-            o=random.uniform(-2,2,3)
-            d=random.normal(size=3)
-            #*tree = the 7 tree arrays (node_min,node_max,left,right,start,count,tri_order) passed one by one
-            assert bvh_nearest_hit(o,d,v0,v1,v2,1e-4,np.inf,*tree)==brute_force_nearest_hit(o,d,v0,v1,v2,1e-4,np.inf)
-
-
-def test_any_hit_same_as_brute_force():
-    v0,v1,v2=random_triangles(1000)
-    for build in BUILDS:
-        tree=build(v0,v1,v2)
-        random=np.random.default_rng(2)
-        for i in range(1000):
-            o=random.uniform(-2,2,3)
-            d=random.normal(size=3)
-            assert bvh_any_hit(o,d,v0,v1,v2,1e-4,np.inf,*tree)==brute_force_any_hit(o,d,v0,v1,v2,1e-4,np.inf)
-
-
+#TESTING bvh_nearest_hit and bvh_any_hit against brute force in special cases
+#(the large random test of Chapter 1 is in benchmarks/check_chapter1.py)
+#*tree = the 7 tree arrays (node_min,node_max,left,right,start,count,tri_order) passed one by one
 def test_short_rays_same_as_brute_force():
     #like shadow rays: only look up to tmax = 0.5
     v0,v1,v2=random_triangles(1000)
