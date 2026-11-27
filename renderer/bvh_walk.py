@@ -1,5 +1,5 @@
 import numpy as np
-from numba import njit
+from numba import njit,prange
 from renderer.intersections import intersect_ray_triangle,intersect_ray_box
 
 
@@ -7,7 +7,7 @@ from renderer.intersections import intersect_ray_triangle,intersect_ray_box
 def bvh_nearest_hit(o,d,v0,v1,v2,tmin,tmax,node_min,node_max,left,right,start,count,tri_order):
     #finds the nearest triangle the ray hits between tmin and tmax, using the BVH tree
     #it goes down only into the boxes the ray hits and checks the triangles only in those 
-    #returns (t,triangle number,u,v), or (inf, -1, 0, 0) if nothing is hit (same as brute force)
+    #returns (t,triangle number,u,v), or (inf,-1,0,0) if nothing is hit (same as brute force)
     #u and v: where on the triangle the hit is (barycentric coordinates)
 
     
@@ -97,7 +97,7 @@ def bvh_any_hit(o,d,v0,v1,v2,tmin,tmax,node_min,node_max,left,right,start,count,
         if hit == False: #the ray misses the box -> skip this node and everything under it
             continue
 
-        if left[row] == -1: #no children (left = -1): this node is a leaf
+        if left[row] == -1: #no children (left=-1) meaning this node is a leaf
 
             #check every triangle of the leaf, like brute force
             for leaf_triangle in tri_order[start[row]:start[row]+count[row]]:
@@ -131,3 +131,29 @@ def bvh_any_hit(o,d,v0,v1,v2,tmin,tmax,node_min,node_max,left,right,start,count,
                     top+=1 
 
     return False #the stack is empty and nothing was hit
+
+
+
+@njit(cache=True, parallel=True)
+def bvh_nearest_hits_batch(O,D,v0,v1,v2,tmin,tmax,node_min,node_max,left,right,start,count,tri_order):
+    #finds the nearest hit for MANY rays at once (not one by one)
+    #O,D: the origins and directions of all the rays shape (k,3), one row per ray
+    #returns 4 arrays of length k:t,triangle number,u,v (the answer of ray i is at position i)
+    k=O.shape[0] #how many rays there are
+
+    #empty arrays for the answers, one place for each ray
+    best_t=np.empty(k)
+    best_tri=np.empty(k,np.int64) #int because the triangle number is a whole number
+    best_u=np.empty(k)
+    best_v=np.empty(k)
+
+    #prange instead of range because the rays are shared between the cores of the computer and run at the same time
+    #this is safe because every ray is solved on its own and writes only in its own place i    
+    for i in prange(k):
+        t,tri,u,v=bvh_nearest_hit(O[i],D[i],v0,v1,v2,tmin,tmax,node_min,node_max,left,right,start,count,tri_order) #the same walk as before for ray i
+        #saving the answer of ray i
+        best_t[i]=t
+        best_tri[i]=tri
+        best_u[i]=u
+        best_v[i]=v
+    return best_t, best_tri, best_u, best_v
