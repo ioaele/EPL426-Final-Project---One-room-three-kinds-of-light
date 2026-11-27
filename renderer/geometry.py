@@ -22,7 +22,7 @@ def normals(v0, v1, v2, smooth=False):
         weightedN=cross[i]
         for j in range(3):
             p=trig[i, j]
-            x, y, x=p
+            x, y, z=p
             #32-tiny
             key=(round(float(x), 7), round(float(y), 7), round(float(z), 7))
             if key in fSum:

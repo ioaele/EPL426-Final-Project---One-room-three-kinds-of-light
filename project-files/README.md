@@ -49,10 +49,10 @@ EPL426 — Computer Graphics
 │   └── teapot.obj
 │
 ├── renderer/
-│   ├── intersections.py       # (Eleni) ray-triangle, ray-box, brute-force nearest/any hit
+│   ├── intersections.py       # (Eleni) ray-triangle, ray-box, brute-force nearest/any hit (one ray or many rays - batch)
 │   ├── bvh_median.py          # (Eleni) BVH build, median split
 │   ├── bvh_sah.py             # (Eleni) BVH build, surface area heuristic
-│   ├──  bvh_walk.py            # (Eleni) BVH walk: nearest hit, any hit
+│   ├── bvh_walk.py            # (Eleni) BVH walk: nearest hit, any hit (one ray or many rays - batch)
 │   └── radiosity.py            # (Katerina) splits surfaces into patches,calculates light transfer between them,finds their final colours.
 │
 ├── tools/
@@ -60,11 +60,15 @@ EPL426 — Computer Graphics
 │
 ├── tests/
 │   ├── test_intersections.py  # (Eleni) ray-triangle, ray-box and brute-force tests
-│   ├── test_bvh.py            # (Eleni) BVH against brute force (median and SAH)
-│   ├──  test_terrain.py        # (Eleni) terrain level 8 BVH builds in < 1 minute
+│   ├── test_bvh.py            # (Eleni) BVH build and BVH against brute force (median and SAH)
 │   └── test_radiosity.py        # (Katerina) checks that the radiosity functions are calculated correctly.
 │
-├── pytest.ini                 # (Eleni) pytest settings
+├── benchmarks/
+│   ├── check_chapter1.py      # (Eleni) the 3 "It works when" checks of Chapter 1
+│   ├── benchmark_bvh.py       # (Eleni) cost of a ray from 2000 to 500000 triangles (report measurement 1)
+│   └── benchmark_radiosity.py # (Katerina)
+│
+├── pytest.ini                 # pytest settings
 │
 ├── output/
 │
@@ -90,7 +94,7 @@ pytest
 python tools/generate_terrain.py 8
 ```
 
-Writes `project-files/scenes/terrain.obj` (level 8 = 131 072 triangles).
+Writes `project-files/scenes/terrain.obj` 
 
 ## Running the renderer
 
@@ -123,20 +127,32 @@ py tools/compare_images.py project-files/reference/whitted.png project-files/ref
 
 ## Eleni part
 
-**My files:** in the renderer folder: intersections.py, bvh_median.py, bvh_sah.py and bvh_walk.py. In the tools folder: generate_terrain.py. My tests in the tests folder: test_intersections.py, test_bvh.py and test_terrain.py. I also made pytest.ini (so the tests can find the renderer and tools folders) and the terrain file project-files/scenes/terrain.obj.
+**My files:** in the renderer folder: intersections.py, bvh_median.py, bvh_sah.py and bvh_walk.py. In the tools folder: generate_terrain.py. My tests in the tests folder: test_intersections.py and test_bvh.py. In the benchmarks folder: check_chapter1.py and benchmark_bvh.py. I also made pytest.ini (so the tests can find the renderer and tools folders), the terrain file project-files/scenes/terrain.obj and our room project-files/scenes/my_scene.json.
 
 **What they do:**
 - intersections.py: tests if a ray hits a triangle or a box, and the brute force (tests the ray against every triangle)
 - bvh_median.py and bvh_sah.py: build the BVH tree of boxes (median split or SAH with 12 bins)
 - bvh_walk.py: finds the nearest triangle a ray hits (bvh_nearest_hit) or if it hits anything (bvh_any_hit, for shadow rays)
+- the batch functions (bvh_nearest_hits_batch, brute_force_nearest_hits_batch): the same for many rays at once, on all the cores
 - generate_terrain.py: makes the fractal landscape (with the diamond-square algorithm) and generates terrain.obj
+- check_chapter1.py: checks the 3 "It works when" points of Chapter 1 (same hit as brute force, Cornell room speed and image, terrain build time)
+- benchmark_bvh.py: the measurement 1 of the report (cost of a ray with brute force, median and sah, from 2000 to 500000 triangles)
 
 Run my tests:
-py -m pytest tests/test_intersections.py tests/test_bvh.py tests/test_terrain.py -v
-   -> It should say **32 passed** (test_terrain takes a few seconds because it builds the BVH of 131072 triangles)
+py -m pytest tests/test_intersections.py tests/test_bvh.py -v
+   -> It should output **29 passed**
+
+Check Chapter 1 (takes about 1 minute): py benchmarks/check_chapter1.py
+   -> For every check it prints the result and what the handout expects (for example: sah: about 5 million rays per second (expected: 2 to 5 million))
+
+The measurement for the report (takes about 1 minute): py benchmarks/benchmark_bvh.py
+   -> It prints the results for every terrain level and saves them in output/benchmark_bvh.csv (opens in excel)
 
 Make the terrain again (8 is the level, level L gives 2*4^L triangles): py tools/generate_terrain.py 8
    -> It should output **level 8: 66049 points, 131072 triangles** and it generates project-files/scenes/terrain.obj
+
+If you change intersections.py, delete the numba cache first (numba does not notice changes in functions from another file):
+rm renderer/__pycache__/*.nbi renderer/__pycache__/*.nbc
 
 
 ## Katerina Part

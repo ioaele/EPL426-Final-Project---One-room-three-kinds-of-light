@@ -1,10 +1,16 @@
 import numpy as np
-from numba import njit
+from numba import njit,prange
 
 EPS = 1e-12 #values smaller than this are treated as 0 because floating-point rounding 
 #means a result that should be exactly 0 usually comes out as a number very close to it 
 
 #helper functions
+@njit(cache=True)
+def sub3(a, b):
+    #a - b for two 3D vectors
+    #returns a tuple (like cross3) because creating a new numpy array every time is slow
+    return (a[0]-b[0], a[1]-b[1], a[2]-b[2])
+
 @njit(cache=True)
 def dot3(a, b):
     #dot product of two 3D vectors
@@ -14,7 +20,13 @@ def dot3(a, b):
 @njit(cache=True)
 def cross3(a, b):
     #cross product of two 3D vectors
-    return np.array([a[1] * b[2] - a[2] * b[1],a[2] * b[0] - a[0] * b[2],a[0] * b[1] - a[1] * b[0]])
+    #return np.array([a[1] * b[2] - a[2] * b[1],a[2] * b[0] - a[0] * b[2],a[0] * b[1] - a[1] * b[0]])
+    #MORE OPTIMAL WAY: returns a tuple (x, y, z) and not a numpy array because creating a new array every time is slow and
+    #a tuple of 3 numbers is almost free in numba 
+    x = a[1] * b[2] - a[2] * b[1]
+    y = a[2] * b[0] - a[0] * b[2]
+    z = a[0] * b[1] - a[1] * b[0]
+    return (x, y, z)
 
 
 @njit(cache=True)
@@ -31,7 +43,8 @@ def intersect_ray_triangle(o,d,a,b,c,t_min,t_max):
     #STEP1
 
     #normal of the plane
-    n = cross3(b - a, c - a)
+    ab=sub3(b,a)  #the edge a->b (used again below, so we compute it once)
+    n=cross3(ab,sub3(c,a))
 
     #checking n.d=0. if 0 it means that the ray is parallel to the plane
     n_d=dot3(n,d)
@@ -53,7 +66,7 @@ def intersect_ray_triangle(o,d,a,b,c,t_min,t_max):
         return np.inf, 0.0, 0.0
 
     # The point where the ray meets the plane
-    P=o+t*d
+    P=(o[0]+t*d[0],o[1]+t*d[1],o[2]+t*d[2])  #o+t*d as a tuple (not a new array)
 
     #STEP2 checking if the intersecting point is inside the triangle
 
@@ -63,17 +76,17 @@ def intersect_ray_triangle(o,d,a,b,c,t_min,t_max):
     #dot(...,n) >= 0 -> inside of this edge and dot(...,n)< 0 -> P is outside the triangle.
 
     #edge a -> b
-    e_ab = dot3(cross3(b - a, P - a), n) 
+    e_ab=dot3(cross3(ab,sub3(P,a)),n)
     if e_ab < 0.0:
         return np.inf, 0.0, 0.0      
 
     #edge b -> c
-    e_bc = dot3(cross3(c - b, P - b), n)
+    e_bc=dot3(cross3(sub3(c,b),sub3(P,b)),n)
     if e_bc < 0.0:
         return np.inf, 0.0, 0.0     
 
     #edge c -> a
-    e_ca = dot3(cross3(a - c, P - c), n)
+    e_ca=dot3(cross3(sub3(a,c),sub3(P,c)),n)
     if e_ca < 0.0:
         return np.inf, 0.0, 0.0      
 
@@ -123,8 +136,29 @@ def brute_force_any_hit(o,d,v0,v1,v2,t_min,t_max):
         if t!=np.inf:
              return True
 
-    
+
     return False
+
+
+
+@njit(cache=True, parallel=True)
+def brute_force_nearest_hits_batch(O,D,v0,v1,v2,t_min,t_max):
+    #brute force for MANY rays at once, like bvh_nearest_hits_batch (so we can compare them)
+    #O,D: the origins and directions of all the rays, shape (k,3), one row per ray
+    #returns 4 arrays of length k: t, triangle number, u, v (the answer of ray i is at position i)
+    k=O.shape[0]  #how many rays there are
+    best_t=np.empty(k)
+    best_tri=np.empty(k,np.int64)
+    best_u=np.empty(k)
+    best_v=np.empty(k)
+    #prange: the rays are shared between the cores and run at the same time
+    for i in prange(k):
+        t,tri,u,v=brute_force_nearest_hit(O[i],D[i],v0,v1,v2,t_min,t_max)
+        best_t[i]=t
+        best_tri[i]=tri
+        best_u[i]=u
+        best_v[i]=v
+    return best_t,best_tri,best_u,best_v
 
 @njit(cache=True)
 #REFERENCE: https://www.scratchapixel.com/lessons/3d-basic-rendering/introduction-acceleration-structure//bounding-volume-hierarchy-BVH-part1.html
